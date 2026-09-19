@@ -18,3 +18,6 @@
 - Final: fixed 浏览器组合键 — 快捷键测试 RED→GREEN，四项总测试通过。
 - Final: Ruling: 真实认证、注册、评论持久化明确延后，符合用户选择。像素/视口由主执行者浏览器验证；GitHub与文档由主执行者收尾，不交给审查员重复验证。
 - Ruling: 不另建 worktree，沿用用户指定的尚未提交脚手架目录；不影响其他已提交分支。未指定 GitHub 可见性采用私有仓库，后续可调整。
+- Task 3: 最终 4/4 测试、ESLint/TypeScript、生产构建均通过；pnpm start 已启动预览。三页共15组视口无横向溢出。
+- GitHub: 已创建私有仓库 https://github.com/Siyuan-Xue/bnds.life 并推送 main。提交前扫描确认 .env 未暂存，本地密钥未出现在提交文件中。
+- 已交付范围与设备验证限制见 docs/verification.md；真实登录与评论持久化仍按用户选择延后。

@@ -41,8 +41,10 @@
 ## 自动检查与审查
 
 - `pnpm test`：4 项测试，覆盖目录搜索、未知 ID、共用目录/推荐去重、修饰键快捷键防误触。
-- `pnpm check`：ESLint 与 TypeScript。
-- `pnpm build`：生产构建。
+- `pnpm check`：ESLint 与 TypeScript 通过，无 lint 警告或错误。
+- `pnpm build`：生产构建通过，生成17个页面；`pnpm start` 成功启动并实际访问首页。
 - 独立代码审查未发现 Critical 问题；搜索溢出、组合键、叠层 Escape、手机评论焦点问题均已修复并验证。
 
 账户架构保留，登录方式与真实评论发布按用户选择延后。所有视频为本地生成的占位文件，评论明确标注示例。本次交付本地开发版与 GitHub 代码，尚未部署到域名或服务器。
+
+代码已推送到私有仓库 [Siyuan-Xue/bnds.life](https://github.com/Siyuan-Xue/bnds.life)，主分支为 main。`.env` 和本地密钥未包含在提交中。
