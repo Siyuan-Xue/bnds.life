@@ -31,6 +31,13 @@ export function Watch({ video, related }: { video: Video; related: Video[] }) {
       </div>
       <section className="watch-details">
         <h1>{video.title}</h1>
+        <p className="watch-date">
+          {video.recordedAt ? (
+            <time dateTime={video.recordedAt}>{video.recordedAt}</time>
+          ) : (
+            "日期待补充"
+          )}
+        </p>
         <Story video={video} />
       </section>
       <aside className="related-videos" aria-label="更多视频">
