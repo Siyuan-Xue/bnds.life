@@ -11,7 +11,6 @@ export function Player({
   feed = false,
   theater,
   onTheater,
-  onAspectRatio,
   children,
 }: {
   video: Video;
@@ -19,7 +18,6 @@ export function Player({
   feed?: boolean;
   theater?: boolean;
   onTheater?: () => void;
-  onAspectRatio?: (ratio: number) => void;
   children?: React.ReactNode;
 }) {
   const media = useRef<HTMLVideoElement>(null);
@@ -34,20 +32,6 @@ export function Player({
   const [speed, setSpeed] = useState(1);
   const [error, setError] = useState(false);
   const [full, setFull] = useState(false);
-
-  const reportMetadata = useCallback(
-    (element: HTMLVideoElement) => {
-      setDuration(element.duration);
-      const ratio = element.videoWidth / element.videoHeight;
-      if (Number.isFinite(ratio) && ratio > 0) onAspectRatio?.(ratio);
-    },
-    [onAspectRatio],
-  );
-  useEffect(() => {
-    // Cached media may finish loading before React attaches event handlers.
-    const element = media.current;
-    if (element && element.readyState >= 1) reportMetadata(element);
-  }, [reportMetadata, video.source]);
 
   const play = useCallback(() => {
     const element = media.current;
@@ -152,7 +136,7 @@ export function Player({
         onPause={() => setPlaying(false)}
         onEnded={() => setPlaying(false)}
         onTimeUpdate={(event) => setCurrent(event.currentTarget.currentTime)}
-        onLoadedMetadata={(event) => reportMetadata(event.currentTarget)}
+        onLoadedMetadata={(event) => setDuration(event.currentTarget.duration)}
         onVolumeChange={(event) => {
           setMuted(event.currentTarget.muted);
           setVolume(event.currentTarget.volume);

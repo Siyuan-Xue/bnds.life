@@ -1,13 +1,7 @@
 "use client";
 import Link from "next/link";
 import Image from "next/image";
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  type CSSProperties,
-} from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { Video } from "~/lib/videos";
 import { Comments } from "./comments";
 import { Icon } from "./icon";
@@ -19,7 +13,6 @@ export function Recommend({ videos }: { videos: Video[] }) {
   const [active, setActive] = useState(0);
   const [comments, setComments] = useState(false);
   const [compact, setCompact] = useState(false);
-  const [aspectRatios, setAspectRatios] = useState<Record<string, number>>({});
   const commentsButton = useRef<HTMLButtonElement>(null);
   const panel = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -136,29 +129,9 @@ export function Recommend({ videos }: { videos: Video[] }) {
             aria-hidden={index !== active}
             inert={index !== active}
           >
-            <div
-              className={`feed-video-wrap ${(aspectRatios[video.id] ?? 9 / 16) > 9 / 16 ? "is-adaptive" : ""}`}
-              style={
-                {
-                  "--feed-aspect-ratio": aspectRatios[video.id] ?? 9 / 16,
-                } as CSSProperties
-              }
-            >
+            <div className="feed-video-wrap">
               {Math.abs(index - active) <= 1 ? (
-                <Player
-                  video={video}
-                  active={index === active}
-                  feed
-                  onAspectRatio={(ratio) => {
-                    // Keep the feed portrait-first; wider footage can grow up to a square.
-                    const bounded = Math.min(1, Math.max(9 / 16, ratio));
-                    setAspectRatios((previous) =>
-                      previous[video.id] === bounded
-                        ? previous
-                        : { ...previous, [video.id]: bounded },
-                    );
-                  }}
-                />
+                <Player video={video} active={index === active} feed />
               ) : (
                 <div className="feed-player inactive-poster">
                   <Image src={video.poster} fill unoptimized alt="" />
