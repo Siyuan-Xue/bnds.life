@@ -1,5 +1,5 @@
-// Keep in sync with the recommendation layout media query in globals.css.
-export const RECOMMEND_MOBILE_QUERY = "(max-aspect-ratio: 1/1)";
+// Shared by navigation and playback; keep in sync with globals.css.
+export const MOBILE_LAYOUT_QUERY = "(max-aspect-ratio: 1/1)";
 
 export function videoAspectRatio(
   width: number,
@@ -16,11 +16,8 @@ export function videoAspectRatio(
   return Number.isFinite(ratio) && ratio > 0 ? ratio : undefined;
 }
 
-export function recommendationAspectRatio(
-  ratio: number | undefined,
-  storyOpen: boolean,
-): number {
-  if (storyOpen || ratio === undefined || !Number.isFinite(ratio) || ratio <= 0)
+export function recommendationAspectRatio(ratio: number | undefined): number {
+  if (ratio === undefined || !Number.isFinite(ratio) || ratio <= 0)
     return 9 / 16;
   return Math.min(1, Math.max(9 / 16, ratio));
 }

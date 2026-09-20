@@ -41,18 +41,7 @@ test("推荐页允许中间竖屏比例，横屏最多使用方形框，未知�
     [NaN, 9 / 16],
     [0, 9 / 16],
   ])
-    assert.equal(recommendationAspectRatio(ratio, false), expected);
-});
-
-test("展开故事统一竖屏，关闭后恢复该视频比例，不覆盖已识别的原始比例", () => {
-  for (const [ratio, restored] of [
-    [1, 1],
-    [3 / 4, 3 / 4],
-    [16 / 9, 1],
-  ]) {
-    assert.equal(recommendationAspectRatio(ratio, true), 9 / 16);
-    assert.equal(recommendationAspectRatio(ratio, false), restored);
-  }
+    assert.equal(recommendationAspectRatio(ratio), expected);
 });
 
 test("观看页横屏列宽跟随比例，方形和竖屏保留信息列宽", () => {

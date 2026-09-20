@@ -13,16 +13,12 @@ import { Story } from "./story";
 import { Icon } from "./icon";
 import { Player } from "./player";
 import { isPlaybackShortcut } from "~/lib/shortcuts";
-import {
-  recommendationAspectRatio,
-  RECOMMEND_MOBILE_QUERY,
-} from "~/lib/video-layout";
+import { recommendationAspectRatio } from "~/lib/video-layout";
 
 export function Recommend({ videos }: { videos: Video[] }) {
   const scroll = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(0);
   const [storyOpen, setStoryOpen] = useState(false);
-  const [compact, setCompact] = useState(false);
   const [ratios, setRatios] = useState<Record<string, number>>({});
   const rememberRatio = useCallback((source: string, ratio: number) => {
     setRatios((previous) =>
@@ -31,13 +27,7 @@ export function Recommend({ videos }: { videos: Video[] }) {
   }, []);
   const storyButton = useRef<HTMLButtonElement>(null);
   const panel = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const query = window.matchMedia(RECOMMEND_MOBILE_QUERY);
-    const sync = () => setCompact(query.matches);
-    sync();
-    query.addEventListener("change", sync);
-    return () => query.removeEventListener("change", sync);
-  }, []);
+  const storyDialog = useRef<HTMLDialogElement>(null);
   const navigate = useCallback(
     (delta: number) => {
       const root = scroll.current;
@@ -61,36 +51,6 @@ export function Recommend({ videos }: { videos: Video[] }) {
       if (!isPlaybackShortcut(event) || document.querySelector("dialog[open]"))
         return;
       const target = event.target as HTMLElement;
-      if (event.key === "Escape" && storyOpen) {
-        event.preventDefault();
-        closeStory();
-        return;
-      }
-      if (storyOpen && compact && event.key === "Tab") {
-        const controls = Array.from(
-          panel.current?.querySelectorAll<HTMLElement>(
-            'button:not(:disabled),a[href],input,select,textarea,[tabindex="0"]',
-          ) ?? [],
-        ).filter((element) => element.getClientRects().length > 0);
-        const first = controls[0];
-        const last = controls.at(-1);
-        if (
-          event.shiftKey &&
-          (document.activeElement === first ||
-            !panel.current?.contains(document.activeElement))
-        ) {
-          event.preventDefault();
-          last?.focus();
-        } else if (
-          !event.shiftKey &&
-          (document.activeElement === last ||
-            !panel.current?.contains(document.activeElement))
-        ) {
-          event.preventDefault();
-          first?.focus();
-        }
-        return;
-      }
       if (
         target.closest(
           "input,textarea,select,button,[contenteditable],dialog[open],.story",
@@ -105,20 +65,22 @@ export function Recommend({ videos }: { videos: Video[] }) {
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [closeStory, storyOpen, compact, navigate]);
+  }, [navigate]);
   useEffect(() => {
-    if (storyOpen)
-      panel.current
-        ?.querySelector<HTMLButtonElement>('button[aria-label="关闭故事"]')
-        ?.focus();
-  }, [storyOpen, compact]);
+    const dialog = storyDialog.current;
+    if (!storyOpen || !dialog) return;
+    if (!dialog.open) dialog.showModal();
+    panel.current
+      ?.querySelector<HTMLButtonElement>('button[aria-label="关闭故事"]')
+      ?.focus();
+    return () => dialog.close();
+  }, [storyOpen]);
   const current = videos[active];
   if (!current) return <p className="empty-state">暂时没有视频</p>;
   return (
-    <div className={`recommend-layout ${storyOpen ? "has-story" : ""}`}>
+    <div className="recommend-layout">
       <div
         className="feed-scroll"
-        inert={storyOpen && compact}
         ref={scroll}
         onScroll={() => {
           const root = scroll.current;
@@ -138,10 +100,7 @@ export function Recommend({ videos }: { videos: Video[] }) {
         aria-label="推荐视频列表"
       >
         {videos.map((video, index) => {
-          const ratio = recommendationAspectRatio(
-            ratios[video.source],
-            storyOpen && !compact,
-          );
+          const ratio = recommendationAspectRatio(ratios[video.source]);
           return (
             <article
               key={video.id}
@@ -151,7 +110,7 @@ export function Recommend({ videos }: { videos: Video[] }) {
               inert={index !== active}
             >
               <div
-                className={`feed-video-wrap ${ratio > 9 / 16 ? "is-adaptive" : ""}`}
+                className="feed-video-wrap"
                 style={{ "--frame-ratio": ratio } as CSSProperties}
               >
                 {Math.abs(index - active) <= 1 ? (
@@ -188,7 +147,7 @@ export function Recommend({ videos }: { videos: Video[] }) {
           );
         })}
       </div>
-      <div className="feed-navigation" inert={storyOpen && compact}>
+      <div className="feed-navigation">
         <button
           className="icon-button"
           aria-label="上一个视频"
@@ -207,22 +166,22 @@ export function Recommend({ videos }: { videos: Video[] }) {
         </button>
       </div>
       {storyOpen && (
-        <>
-          <button
-            className="story-backdrop"
-            aria-label="关闭故事面板"
-            onClick={closeStory}
-          />
-          <div
-            className="feed-story"
-            ref={panel}
-            role={compact ? "dialog" : undefined}
-            aria-modal={compact || undefined}
-            aria-label="视频故事"
-          >
+        <dialog
+          className="story-dialog"
+          ref={storyDialog}
+          aria-label="视频故事"
+          onCancel={(event) => {
+            event.preventDefault();
+            closeStory();
+          }}
+          onClick={(event) => {
+            if (event.target === event.currentTarget) closeStory();
+          }}
+        >
+          <div className="story-dialog-content" ref={panel}>
             <Story video={current} onClose={closeStory} />
           </div>
-        </>
+        </dialog>
       )}
       <span className="sr-only" aria-live="polite">
         正在观看：{current.title}
