@@ -20,10 +20,10 @@ const paths = {
 } as const;
 
 const suppliedIcons = {
-  home: "/icons/home.svg",
-  recommend: "/icons/recommend.svg",
-  search: "/icons/search.svg",
-  user: "/icons/login.svg",
+  home: "/icons/home.svg?v=2",
+  recommend: "/icons/recommend.svg?v=2",
+  search: "/icons/search.svg?v=2",
+  user: "/icons/login.svg?v=2",
 } as const;
 
 export type IconName = keyof typeof paths | keyof typeof suppliedIcons;
@@ -56,7 +56,7 @@ export function Icon({
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="1.7"
+      strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
