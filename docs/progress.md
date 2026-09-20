@@ -21,3 +21,5 @@
 - Task 3: 最终 4/4 测试、ESLint/TypeScript、生产构建均通过；pnpm start 已启动预览。三页共15组视口无横向溢出。
 - GitHub: 已创建私有仓库 https://github.com/Siyuan-Xue/bnds.life 并推送 main。提交前扫描确认 .env 未暂存，本地密钥未出现在提交文件中。
 - 已交付范围与设备验证限制见 docs/verification.md；真实登录与评论持久化仍按用户选择延后。
+
+- 2026-09-20 视频比例适配：实测 YouTube 的方形推荐、展开评论、4:3/方形/竖屏观看页，按媒体元数据实现独立布局规则；评论切换保持播放器实例。小屏评论将 9:16 视频放到面板上方。七种素材的浏览器交叉验收与8项自动测试通过，详见 docs/video-layout.md。

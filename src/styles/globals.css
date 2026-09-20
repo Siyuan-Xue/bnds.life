@@ -356,11 +356,22 @@ p {
   font-size: 14px;
 }
 .watch-layout {
+  --related-width: 396px;
+  --watch-height-limit: max(200px, calc(100dvh - 116px));
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 396px;
+  grid-template-columns: minmax(0, 1fr) var(--related-width);
   grid-template-rows: auto 1fr;
   gap: 0 16px;
-  max-width: 1900px;
+  max-width: min(
+    1900px,
+    calc(
+      max(
+          640px,
+          var(--watch-height-limit) * var(--watch-column-ratio, 16 / 9)
+        ) +
+        var(--related-width) + 48px
+    )
+  );
   margin: auto;
   padding: 12px 16px 40px;
 }
@@ -458,7 +469,8 @@ p {
 }
 .watch-player {
   width: 100%;
-  aspect-ratio: 16/9;
+  aspect-ratio: var(--watch-ratio, 16 / 9);
+  max-height: var(--watch-height-limit);
 }
 .player:fullscreen {
   width: 100vw !important;
@@ -609,6 +621,7 @@ p {
 .theater-mode .watch-player {
   margin: auto;
   height: min(75dvh, calc(100vw * 9 / 16));
+  max-height: none;
   width: 100%;
   border-radius: 0;
   aspect-ratio: auto;
@@ -761,6 +774,9 @@ p {
   display: none;
 }
 .feed-item {
+  --feed-height: max(0px, calc(100dvh - 96px));
+  --feed-reserved-width: 168px;
+  --feed-offset: 96px;
   height: calc(100dvh - 80px);
   min-height: 200px;
   padding: 8px 0;
@@ -771,11 +787,17 @@ p {
   scroll-snap-stop: always;
 }
 .feed-video-wrap {
-  height: 100%;
+  height: auto;
+  max-height: 100%;
+  aspect-ratio: var(--frame-ratio, 9 / 16);
+  flex-shrink: 0;
   position: relative;
   display: flex;
-  width: min(calc((100dvh - 96px) * 9 / 16), calc(100% - 168px));
-  margin-right: 96px;
+  width: min(
+    calc(var(--feed-height) * var(--frame-ratio, 9 / 16)),
+    calc(100% - var(--feed-reserved-width))
+  );
+  margin-right: var(--feed-offset);
 }
 .feed-player {
   width: 100%;
@@ -829,6 +851,7 @@ p {
   position: absolute;
   inset: -50px -16px -16px;
   background: linear-gradient(transparent, #0009);
+  border-radius: 0 0 12px 12px;
 }
 .feed-caption p {
   display: flex;
@@ -926,9 +949,9 @@ p {
   padding: 12px 16px;
   border-top: 1px solid #ddd;
 }
-.has-comments .feed-video-wrap {
-  margin-right: 64px;
-  width: min(calc((100dvh - 96px) * 9 / 16), calc(100% - 96px));
+.has-comments .feed-item {
+  --feed-reserved-width: 96px;
+  --feed-offset: 64px;
 }
 .comments-backdrop {
   display: none;
@@ -1018,7 +1041,7 @@ p {
     margin-left: 0;
   }
   .watch-layout {
-    grid-template-columns: minmax(0, 1fr) 350px;
+    --related-width: 350px;
   }
   .compact-card .thumbnail {
     flex-basis: 50%;
@@ -1043,6 +1066,7 @@ p {
 @media (max-width: 999px) {
   .watch-layout {
     grid-template-columns: minmax(0, 1fr);
+    max-width: none;
     padding: 12px 24px 32px;
   }
   .related-videos {
@@ -1068,9 +1092,9 @@ p {
   .has-comments .feed-navigation {
     display: none;
   }
-  .has-comments .feed-video-wrap {
-    width: calc(100% - 80px);
-    margin-right: 60px;
+  .has-comments .feed-item {
+    --feed-reserved-width: 80px;
+    --feed-offset: 60px;
   }
 }
 @media (max-width: 791px) {
@@ -1107,13 +1131,10 @@ p {
     background: #0007;
     z-index: 29;
   }
-  .has-comments .feed-video-wrap {
-    width: min(calc((100dvh - 96px) * 9 / 16), calc(100% - 120px));
-    margin-right: 56px;
-  }
-  .feed-video-wrap {
-    width: min(calc((100dvh - 96px) * 9 / 16), calc(100% - 120px));
-    margin-right: 56px;
+  .feed-item,
+  .has-comments .feed-item {
+    --feed-reserved-width: 120px;
+    --feed-offset: 56px;
   }
   .feed-navigation {
     right: 8px;
@@ -1171,9 +1192,6 @@ p {
     padding: 0 12px;
     height: 64px;
   }
-  .thumbnail {
-    border-radius: 0;
-  }
   .video-card-info {
     padding: 0 12px;
   }
@@ -1227,10 +1245,11 @@ p {
     height: calc(100dvh - 56px);
     padding: 0;
   }
-  .feed-video-wrap,
-  .has-comments .feed-video-wrap {
-    width: 100%;
-    margin: 0;
+  .feed-item,
+  .has-comments .feed-item {
+    --feed-height: max(0px, calc(100dvh - 56px));
+    --feed-reserved-width: 0px;
+    --feed-offset: 0px;
   }
   .feed-player,
   .inactive-poster {
@@ -1249,6 +1268,11 @@ p {
     right: 64px;
     bottom: 28px;
   }
+  .feed-caption::before {
+    right: -64px;
+    bottom: -28px;
+    border-radius: 0;
+  }
   .feed-navigation {
     display: none;
   }
@@ -1262,6 +1286,25 @@ p {
     top: 12px;
     left: 12px;
     right: 12px;
+  }
+}
+/* Keep the portrait frame visible above the mobile comments sheet. */
+@media (max-width: 791px) {
+  .has-comments .feed-item {
+    --feed-height: max(
+      0px,
+      calc((100dvh - 56px) - min((100dvh - 56px) * 0.75, 640px) - 16px)
+    );
+    --feed-reserved-width: 0px;
+    --feed-offset: 0px;
+    align-items: flex-start;
+    padding-top: 8px;
+  }
+  .has-comments .feed-caption,
+  .has-comments .feed-actions,
+  .has-comments .feed-player .player-controls,
+  .has-comments .feed-player .center-play {
+    visibility: hidden;
   }
 }
 @media (max-width: 380px) {
@@ -1349,7 +1392,9 @@ p {
   isolation: isolate;
 }
 @container feed (min-width:calc((100dvh - 96px) * 9 / 16 + 1056px)) {
-  .recommend-layout:not(.has-comments) .feed-caption {
+  .recommend-layout:not(.has-comments)
+    .feed-video-wrap:not(.is-adaptive)
+    .feed-caption {
     left: calc(-1 * (100cqw - (100dvh - 96px) * 9 / 16 - 96px) / 2 + 16px);
     right: auto;
     bottom: 16px;
@@ -1360,18 +1405,28 @@ p {
     color: #0f0f0f;
     text-shadow: none;
   }
-  .recommend-layout:not(.has-comments) .feed-caption::before {
+  .recommend-layout:not(.has-comments)
+    .feed-video-wrap:not(.is-adaptive)
+    .feed-caption::before {
     display: none;
   }
-  .recommend-layout:not(.has-comments) .feed-caption a {
+  .recommend-layout:not(.has-comments)
+    .feed-video-wrap:not(.is-adaptive)
+    .feed-caption
+    a {
     font-size: 20px;
     font-weight: 700;
     line-height: 28px;
   }
-  .recommend-layout:not(.has-comments) .feed-caption p {
+  .recommend-layout:not(.has-comments)
+    .feed-video-wrap:not(.is-adaptive)
+    .feed-caption
+    p {
     margin-bottom: 12px;
   }
-  .recommend-layout:not(.has-comments) .feed-sample {
+  .recommend-layout:not(.has-comments)
+    .feed-video-wrap:not(.is-adaptive)
+    .feed-sample {
     background: #f2f2f2;
   }
 }

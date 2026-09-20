@@ -1,6 +1,7 @@
 "use client";
-import { useState } from "react";
+import { useCallback, useState, type CSSProperties } from "react";
 import type { Video } from "~/lib/videos";
+import { watchColumnAspectRatio } from "~/lib/video-layout";
 import { Player } from "./player";
 import { Comments } from "./comments";
 import { VideoCard } from "./video-card";
@@ -8,12 +9,30 @@ import { VideoCard } from "./video-card";
 export function Watch({ video, related }: { video: Video; related: Video[] }) {
   const [theater, setTheater] = useState(false);
   const [description, setDescription] = useState(false);
+  const [geometry, setGeometry] = useState<{ source: string; ratio: number }>();
+  const rememberRatio = useCallback((source: string, ratio: number) => {
+    setGeometry((previous) =>
+      previous?.source === source && previous.ratio === ratio
+        ? previous
+        : { source, ratio },
+    );
+  }, []);
+  const ratio = geometry?.source === video.source ? geometry.ratio : 16 / 9;
   return (
-    <div className={`watch-layout ${theater ? "theater-mode" : ""}`}>
+    <div
+      className={`watch-layout ${theater ? "theater-mode" : ""}`}
+      style={
+        {
+          "--watch-ratio": ratio,
+          "--watch-column-ratio": watchColumnAspectRatio(ratio),
+        } as CSSProperties
+      }
+    >
       <div className="watch-stage">
         <Player
           video={video}
           theater={theater}
+          onAspectRatio={rememberRatio}
           onTheater={() => {
             setTheater((value) => !value);
             requestAnimationFrame(() =>

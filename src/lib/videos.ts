@@ -5,7 +5,6 @@ export type Video = {
   duration: number;
   source: string;
   poster: string;
-  orientation: "landscape" | "portrait";
   description: string;
 };
 
@@ -24,14 +23,30 @@ const titles = [
   "青春里的普通一天",
 ];
 
+// Different intrinsic dimensions exercise the same catalog in both browsing modes.
+// Layout is read from the media file, never inferred from its filename or this list.
+const sources = [
+  "landscape",
+  "portrait",
+  "square",
+  "classic",
+  "portrait-wide",
+  "cinema",
+  "tall",
+  "portrait",
+  "landscape",
+  "landscape",
+  "portrait",
+  "landscape",
+];
+
 const videos: Video[] = titles.map((title, index) => ({
   id: `memory-${String(index + 1).padStart(2, "0")}`,
   title,
   author: "BNDS.life",
   duration: 20,
-  source: `/media/placeholder-${index % 3 === 1 ? "portrait" : "landscape"}.mp4`,
+  source: `/media/placeholder-${sources[index]}.mp4`,
   poster: `/media/poster-${index + 1}.svg`,
-  orientation: index % 3 === 1 ? "portrait" : "landscape",
   description:
     "这是一段用于预览浏览和播放效果的占位视频，尚未加入真实校园影像。标题与评论均为示例内容。",
 }));

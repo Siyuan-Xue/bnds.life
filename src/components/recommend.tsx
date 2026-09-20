@@ -1,18 +1,31 @@
 "use client";
 import Link from "next/link";
 import Image from "next/image";
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
 import type { Video } from "~/lib/videos";
 import { Comments } from "./comments";
 import { Icon } from "./icon";
 import { Player } from "./player";
 import { isPlaybackShortcut } from "~/lib/shortcuts";
+import { recommendationAspectRatio } from "~/lib/video-layout";
 
 export function Recommend({ videos }: { videos: Video[] }) {
   const scroll = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(0);
   const [comments, setComments] = useState(false);
   const [compact, setCompact] = useState(false);
+  const [ratios, setRatios] = useState<Record<string, number>>({});
+  const rememberRatio = useCallback((source: string, ratio: number) => {
+    setRatios((previous) =>
+      previous[source] === ratio ? previous : { ...previous, [source]: ratio },
+    );
+  }, []);
   const commentsButton = useRef<HTMLButtonElement>(null);
   const panel = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -121,44 +134,58 @@ export function Recommend({ videos }: { videos: Video[] }) {
         }}
         aria-label="推荐视频列表"
       >
-        {videos.map((video, index) => (
-          <article
-            key={video.id}
-            className="feed-item"
-            aria-label={`${index + 1} / ${videos.length}：${video.title}`}
-            aria-hidden={index !== active}
-            inert={index !== active}
-          >
-            <div className="feed-video-wrap">
-              {Math.abs(index - active) <= 1 ? (
-                <Player video={video} active={index === active} feed />
-              ) : (
-                <div className="feed-player inactive-poster">
-                  <Image src={video.poster} fill unoptimized alt="" />
+        {videos.map((video, index) => {
+          const ratio = recommendationAspectRatio(
+            ratios[video.source],
+            comments,
+          );
+          return (
+            <article
+              key={video.id}
+              className="feed-item"
+              aria-label={`${index + 1} / ${videos.length}：${video.title}`}
+              aria-hidden={index !== active}
+              inert={index !== active}
+            >
+              <div
+                className={`feed-video-wrap ${ratio > 9 / 16 ? "is-adaptive" : ""}`}
+                style={{ "--frame-ratio": ratio } as CSSProperties}
+              >
+                {Math.abs(index - active) <= 1 ? (
+                  <Player
+                    video={video}
+                    active={index === active}
+                    feed
+                    onAspectRatio={rememberRatio}
+                  />
+                ) : (
+                  <div className="feed-player inactive-poster">
+                    <Image src={video.poster} fill unoptimized alt="" />
+                  </div>
+                )}
+                <div className="feed-caption">
+                  <p>
+                    <span className="avatar small">十</span>
+                    <strong>{video.author}</strong>
+                    <span className="feed-sample">占位预览</span>
+                  </p>
+                  <Link href={`/watch/${video.id}`}>{video.title}</Link>
                 </div>
-              )}
-              <div className="feed-caption">
-                <p>
-                  <span className="avatar small">十</span>
-                  <strong>{video.author}</strong>
-                  <span className="feed-sample">占位预览</span>
-                </p>
-                <Link href={`/watch/${video.id}`}>{video.title}</Link>
+                <div className="feed-actions">
+                  <button
+                    ref={index === active ? commentsButton : undefined}
+                    aria-label={`查看${video.title}的评论`}
+                    onClick={() => setComments((value) => !value)}
+                    aria-expanded={index === active && comments}
+                  >
+                    <Icon name="comment" />
+                  </button>
+                  <span>评论</span>
+                </div>
               </div>
-              <div className="feed-actions">
-                <button
-                  ref={index === active ? commentsButton : undefined}
-                  aria-label={`查看${video.title}的评论`}
-                  onClick={() => setComments((value) => !value)}
-                  aria-expanded={index === active && comments}
-                >
-                  <Icon name="comment" />
-                </button>
-                <span>评论</span>
-              </div>
-            </div>
-          </article>
-        ))}
+            </article>
+          );
+        })}
       </div>
       <div className="feed-navigation" inert={comments && compact}>
         <button

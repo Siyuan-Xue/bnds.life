@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { formatDuration, type Video } from "~/lib/videos";
 import { Icon } from "./icon";
 import { isPlaybackShortcut } from "~/lib/shortcuts";
+import { videoAspectRatio } from "~/lib/video-layout";
 
 export function Player({
   video,
@@ -11,6 +12,7 @@ export function Player({
   feed = false,
   theater,
   onTheater,
+  onAspectRatio,
   children,
 }: {
   video: Video;
@@ -18,6 +20,7 @@ export function Player({
   feed?: boolean;
   theater?: boolean;
   onTheater?: () => void;
+  onAspectRatio?: (source: string, ratio: number) => void;
   children?: React.ReactNode;
 }) {
   const media = useRef<HTMLVideoElement>(null);
@@ -32,6 +35,24 @@ export function Player({
   const [speed, setSpeed] = useState(1);
   const [error, setError] = useState(false);
   const [full, setFull] = useState(false);
+
+  useEffect(() => {
+    const element = media.current;
+    if (!element) return;
+    const syncMetadata = () => {
+      const ratio = videoAspectRatio(element.videoWidth, element.videoHeight);
+      if (ratio !== undefined) onAspectRatio?.(video.source, ratio);
+      if (Number.isFinite(element.duration)) setDuration(element.duration);
+    };
+    element.addEventListener("loadedmetadata", syncMetadata);
+    element.addEventListener("resize", syncMetadata);
+    // A cached video can finish loading before React hydrates its event handlers.
+    if (element.readyState >= HTMLMediaElement.HAVE_METADATA) syncMetadata();
+    return () => {
+      element.removeEventListener("loadedmetadata", syncMetadata);
+      element.removeEventListener("resize", syncMetadata);
+    };
+  }, [onAspectRatio, video.source]);
 
   const play = useCallback(() => {
     const element = media.current;
@@ -136,7 +157,6 @@ export function Player({
         onPause={() => setPlaying(false)}
         onEnded={() => setPlaying(false)}
         onTimeUpdate={(event) => setCurrent(event.currentTarget.currentTime)}
-        onLoadedMetadata={(event) => setDuration(event.currentTarget.duration)}
         onVolumeChange={(event) => {
           setMuted(event.currentTarget.muted);
           setVolume(event.currentTarget.volume);
