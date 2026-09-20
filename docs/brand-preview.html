@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="zh-CN">
+  <meta charset="utf-8" />
+  <title>bnds life 标志透明度检查</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 32px;
+      background: #edf0f4;
+      font:
+        15px Arial,
+        sans-serif;
+      color: #0f0f0f;
+    }
+    h1 {
+      font-size: 24px;
+    }
+    .panels {
+      display: grid;
+      gap: 20px;
+      grid-template-columns: 1fr 1fr;
+    }
+    .panel {
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid #ccd2dc;
+    }
+    .label {
+      background: white;
+      padding: 12px 20px;
+    }
+    .canvas {
+      height: 300px;
+      display: flex;
+      align-items: center;
+      background: white;
+    }
+    .canvas img {
+      width: 100%;
+    }
+    .dark {
+      background: #222a34;
+    }
+    .check {
+      background-color: #fff;
+      background-image: conic-gradient(
+        #dde3ea 25%,
+        transparent 0 50%,
+        #dde3ea 0 75%,
+        transparent 0
+      );
+      background-size: 24px 24px;
+    }
+    .colors {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .color {
+      padding: 20px;
+      border-radius: 12px;
+      min-height: 100px;
+    }
+    .color b {
+      display: block;
+      font-size: 22px;
+      margin-bottom: 8px;
+    }
+  </style>
+  <h1>bnds life · 四色与透明标志</h1>
+  <div class="colors">
+    <div class="color" style="background: #006ecf; color: white">
+      <b>蓝 · #006ECF</b>主要操作 / 选中 / 链接
+    </div>
+    <div class="color" style="background: #f22a1a">
+      <b>红 · #F22A1A</b>播放进度 / 播放状态
+    </div>
+    <div class="color" style="background: #ff8500">
+      <b>橙 · #FF8500</b>提示 / 需要注意
+    </div>
+    <div class="color" style="background: #73b338">
+      <b>绿 · #73B338</b>成功 / 完成
+    </div>
+  </div>
+  <div class="panels">
+    <section class="panel">
+      <div class="label">白色背景</div>
+      <div class="canvas">
+        <img
+          alt="透明标志，白底检查"
+          src="../public/brand/logo-transparent.png"
+        />
+      </div>
+    </section>
+    <section class="panel">
+      <div class="label">深色背景</div>
+      <div class="canvas dark">
+        <img
+          alt="透明标志，深底检查"
+          src="../public/brand/logo-transparent.png"
+        />
+      </div>
+    </section>
+    <section class="panel">
+      <div class="label">透明棋盘格（网页底纹）</div>
+      <div class="canvas check">
+        <img
+          alt="透明标志，透明度检查"
+          src="../public/brand/logo-transparent.png"
+        />
+      </div>
+    </section>
+  </div>
+</html>
