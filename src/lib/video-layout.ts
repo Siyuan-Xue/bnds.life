@@ -34,3 +34,16 @@ export function watchColumnAspectRatio(ratio: number): number {
   // Narrow footage grows vertically; keep enough width for the details below it.
   return ratio >= 4 / 3 ? ratio : 16 / 9;
 }
+
+export function watchRecommendationCount(
+  availableHeight: number,
+  cardHeight: number,
+  gap: number,
+  total: number,
+): number {
+  if (cardHeight <= 0) return total;
+  return Math.min(
+    total,
+    Math.max(1, Math.ceil((availableHeight + gap) / (cardHeight + gap))),
+  );
+}

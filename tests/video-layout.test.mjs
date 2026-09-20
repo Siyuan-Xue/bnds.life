@@ -4,7 +4,24 @@ import {
   videoAspectRatio,
   recommendationAspectRatio,
   watchColumnAspectRatio,
+  watchRecommendationCount,
 } from "../src/lib/video-layout.ts";
+
+test("观看页按可用高度展示完整推荐卡片，末张不裁切", () => {
+  assert.equal(watchRecommendationCount(792, 140, 8, 77), 6);
+  assert.equal(watchRecommendationCount(880, 140, 8, 77), 6);
+  assert.equal(watchRecommendationCount(881, 140, 8, 77), 7);
+  assert.equal(watchRecommendationCount(1400, 140, 8, 77), 10);
+});
+
+test("推荐不足时不重复补齐，空目录不生成卡片", () => {
+  assert.equal(watchRecommendationCount(792, 140, 8, 2), 2);
+  assert.equal(watchRecommendationCount(792, 140, 8, 0), 0);
+});
+
+test("卡片尚未完成布局时保留现有目录", () => {
+  assert.equal(watchRecommendationCount(792, 0, 8, 11), 11);
+});
 
 test("使用媒体原始宽高，未加载或无效元数据不产生错误比例", () => {
   for (const [width, height, expected] of [
