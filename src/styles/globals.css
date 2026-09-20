@@ -86,9 +86,6 @@ p {
   background: #0000000d;
 }
 .site-shell {
-  --sidebar-width: 240px;
-}
-.site-shell.sidebar-collapsed {
   --sidebar-width: 72px;
 }
 .masthead {
@@ -766,17 +763,34 @@ p {
 .feed-navigation .icon-button:hover:not(:disabled) {
   background: #e5e5e5;
 }
-.story-dialog {
-  position: fixed;
-  inset: 64px var(--feed-end-space) auto auto;
+.feed-story {
   width: min(33vw, 480px);
-  height: calc(100dvh - 96px);
-  max-width: calc(100vw - 32px);
-  max-height: calc(100dvh - 80px);
-  margin: 0;
-  padding: 0;
+  flex-shrink: 0;
+  height: calc(100% - 36px);
+  align-self: flex-start;
+  margin: 0 var(--feed-end-space) 0 0;
   border: 1px solid #d9d9d9;
   border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+  z-index: 30;
+}
+.has-story .feed-item {
+  --feed-reserved-width: 96px;
+  --feed-offset: 64px;
+}
+.story-dialog {
+  position: fixed;
+  inset: auto auto 0 50%;
+  transform: translateX(-50%);
+  width: min(100vw, 560px);
+  height: min(75dvh, 640px);
+  max-width: 100vw;
+  max-height: calc(100dvh - 56px);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 12px 12px 0 0;
   overflow: hidden;
   background: #fff;
   color: var(--text);
@@ -922,8 +936,7 @@ p {
 /* Navigation, header and recommendation playback switch together at 1:1. */
 @media (max-aspect-ratio: 1/1) {
   .site-shell,
-  .site-shell.sidebar-collapsed,
-  .site-shell.sidebar-expanded {
+  .site-shell.sidebar-collapsed {
     --sidebar-width: 0px;
   }
   .site-shell:not(.sidebar-overlay-open) .sidebar {
@@ -971,7 +984,8 @@ p {
     height: calc(100dvh - 56px);
     padding: 0;
   }
-  .feed-item {
+  .feed-item,
+  .has-story .feed-item {
     --feed-height: max(0px, calc(100dvh - 56px));
     --feed-reserved-width: 0px;
     --feed-offset: 0px;
@@ -991,15 +1005,6 @@ p {
   }
   .feed-navigation {
     display: none;
-  }
-  .story-dialog {
-    width: min(calc(100vw - 32px), 560px);
-    height: min(70dvh, 640px);
-    margin: 0;
-    inset: 50% auto auto 50%;
-    transform: translate(-50%, -50%);
-    border-radius: 12px;
-    border: 0;
   }
   .feed-top-controls {
     top: 12px;

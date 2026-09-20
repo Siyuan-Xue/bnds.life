@@ -16,8 +16,16 @@ export function videoAspectRatio(
   return Number.isFinite(ratio) && ratio > 0 ? ratio : undefined;
 }
 
-export function recommendationAspectRatio(ratio: number | undefined): number {
-  if (ratio === undefined || !Number.isFinite(ratio) || ratio <= 0)
+export function recommendationAspectRatio(
+  ratio: number | undefined,
+  sidePanelOpen = false,
+): number {
+  if (
+    sidePanelOpen ||
+    ratio === undefined ||
+    !Number.isFinite(ratio) ||
+    ratio <= 0
+  )
     return 9 / 16;
   return Math.min(1, Math.max(9 / 16, ratio));
 }

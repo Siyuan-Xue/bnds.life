@@ -56,3 +56,14 @@ test("观看页横屏列宽跟随比例，方形和竖屏保留信息列宽", ()
     assert.equal(watchColumnAspectRatio(ratio), expected);
   }
 });
+
+test("电脑故事侧面板恢复 9:16，手机版覆盖弹窗保留媒体适配比例", () => {
+  for (const [sourceRatio, normalRatio] of [
+    [1, 1],
+    [3 / 4, 3 / 4],
+    [16 / 9, 1],
+  ]) {
+    assert.equal(recommendationAspectRatio(sourceRatio, true), 9 / 16);
+    assert.equal(recommendationAspectRatio(sourceRatio, false), normalRatio);
+  }
+});

@@ -13,12 +13,17 @@ import { Story } from "./story";
 import { Icon } from "./icon";
 import { Player } from "./player";
 import { isPlaybackShortcut } from "~/lib/shortcuts";
-import { recommendationAspectRatio } from "~/lib/video-layout";
+import {
+  MOBILE_LAYOUT_QUERY,
+  recommendationAspectRatio,
+} from "~/lib/video-layout";
 
 export function Recommend({ videos }: { videos: Video[] }) {
   const scroll = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(0);
   const [storyOpen, setStoryOpen] = useState(false);
+  const [mobile, setMobile] = useState(false);
+  const sidePanelOpen = storyOpen && !mobile;
   const [ratios, setRatios] = useState<Record<string, number>>({});
   const rememberRatio = useCallback((source: string, ratio: number) => {
     setRatios((previous) =>
@@ -28,6 +33,13 @@ export function Recommend({ videos }: { videos: Video[] }) {
   const storyButton = useRef<HTMLButtonElement>(null);
   const panel = useRef<HTMLDivElement>(null);
   const storyDialog = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    const query = window.matchMedia(MOBILE_LAYOUT_QUERY);
+    const sync = () => setMobile(query.matches);
+    sync();
+    query.addEventListener("change", sync);
+    return () => query.removeEventListener("change", sync);
+  }, []);
   const navigate = useCallback(
     (delta: number) => {
       const root = scroll.current;
@@ -51,6 +63,11 @@ export function Recommend({ videos }: { videos: Video[] }) {
       if (!isPlaybackShortcut(event) || document.querySelector("dialog[open]"))
         return;
       const target = event.target as HTMLElement;
+      if (event.key === "Escape" && storyOpen) {
+        event.preventDefault();
+        closeStory();
+        return;
+      }
       if (
         target.closest(
           "input,textarea,select,button,[contenteditable],dialog[open],.story",
@@ -65,20 +82,20 @@ export function Recommend({ videos }: { videos: Video[] }) {
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [navigate]);
+  }, [closeStory, storyOpen, navigate]);
   useEffect(() => {
     const dialog = storyDialog.current;
-    if (!storyOpen || !dialog) return;
-    if (!dialog.open) dialog.showModal();
+    if (!storyOpen) return;
+    if (mobile && dialog && !dialog.open) dialog.showModal();
     panel.current
       ?.querySelector<HTMLButtonElement>('button[aria-label="关闭故事"]')
       ?.focus();
-    return () => dialog.close();
-  }, [storyOpen]);
+    return () => dialog?.close();
+  }, [storyOpen, mobile]);
   const current = videos[active];
   if (!current) return <p className="empty-state">暂时没有视频</p>;
   return (
-    <div className="recommend-layout">
+    <div className={`recommend-layout ${sidePanelOpen ? "has-story" : ""}`}>
       <div
         className="feed-scroll"
         ref={scroll}
@@ -100,7 +117,10 @@ export function Recommend({ videos }: { videos: Video[] }) {
         aria-label="推荐视频列表"
       >
         {videos.map((video, index) => {
-          const ratio = recommendationAspectRatio(ratios[video.source]);
+          const ratio = recommendationAspectRatio(
+            ratios[video.source],
+            sidePanelOpen,
+          );
           return (
             <article
               key={video.id}
@@ -165,7 +185,12 @@ export function Recommend({ videos }: { videos: Video[] }) {
           <Icon name="down" />
         </button>
       </div>
-      {storyOpen && (
+      {sidePanelOpen && (
+        <div className="feed-story" ref={panel} aria-label="视频故事">
+          <Story video={current} onClose={closeStory} />
+        </div>
+      )}
+      {storyOpen && mobile && (
         <dialog
           className="story-dialog"
           ref={storyDialog}
