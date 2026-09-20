@@ -846,17 +846,10 @@ p {
     flex-basis: 50%;
     width: 50%;
   }
-  .feed-story {
-    margin-right: 80px;
-    width: 38vw;
-  }
 }
 @media (max-width: 1100px) {
   .video-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .feed-navigation {
-    right: 12px;
   }
 }
 @media (max-width: 999px) {
@@ -874,17 +867,6 @@ p {
     flex: 0 0 168px;
     width: 168px;
   }
-  .feed-story {
-    width: 42vw;
-    margin-right: 0;
-  }
-  .has-story .feed-navigation {
-    display: none;
-  }
-  .has-story .feed-item {
-    --feed-reserved-width: 80px;
-    --feed-offset: 60px;
-  }
 }
 @media (max-width: 791px) {
   .site-shell {
@@ -901,36 +883,6 @@ p {
   }
   .browse-toolbar {
     height: 64px;
-  }
-  .feed-story {
-    position: absolute;
-    width: min(100%, 560px);
-    height: 75%;
-    max-height: 640px;
-    left: 50%;
-    bottom: 0;
-    transform: translateX(-50%);
-    border-radius: 12px 12px 0 0;
-    border: 0;
-  }
-  .story-backdrop {
-    display: block;
-    position: fixed;
-    inset: 56px 0 0;
-    background: #0007;
-    z-index: 29;
-  }
-  .feed-item,
-  .has-story .feed-item {
-    --feed-reserved-width: 120px;
-    --feed-offset: 56px;
-  }
-  .feed-navigation {
-    right: 8px;
-  }
-  .feed-navigation .icon-button {
-    width: 40px;
-    height: 40px;
   }
 }
 @media (max-width: 600px) {
@@ -1019,6 +971,15 @@ p {
   .playback-toolbar {
     gap: 0;
   }
+}
+/* Recommendation playback has only two modes, split at a 1:1 viewport. */
+@media (max-aspect-ratio: 1/1) {
+  .site-shell.recommend-shell {
+    --sidebar-width: 0px;
+  }
+  .recommend-shell:not(.sidebar-overlay-open) .sidebar {
+    display: none;
+  }
   .feed-item {
     min-height: 0;
     height: calc(100dvh - 56px);
@@ -1047,31 +1008,28 @@ p {
     display: none;
   }
   .feed-story {
-    height: 75%;
+    position: absolute;
+    width: min(calc(100% - 32px), 560px);
+    height: 70%;
+    max-height: 640px;
+    margin: 0;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 12px;
+    border: 0;
+  }
+  .story-backdrop {
+    display: block;
+    position: fixed;
+    inset: 56px 0 0;
+    background: #0007;
+    z-index: 29;
   }
   .feed-top-controls {
     top: 12px;
     left: 12px;
     right: 12px;
-  }
-}
-/* Keep the portrait frame visible above the mobile story sheet. */
-@media (max-width: 791px) {
-  .has-story .feed-item {
-    --feed-height: max(
-      0px,
-      calc((100dvh - 56px) - min((100dvh - 56px) * 0.75, 640px) - 16px)
-    );
-    --feed-reserved-width: 0px;
-    --feed-offset: 0px;
-    align-items: flex-start;
-    padding-top: 8px;
-  }
-  .has-story .feed-caption,
-  .has-story .feed-actions,
-  .has-story .feed-player .player-controls,
-  .has-story .feed-player .center-play {
-    visibility: hidden;
   }
 }
 @media (max-width: 380px) {

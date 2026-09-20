@@ -5,10 +5,12 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "./icon";
 import { BrandLogo } from "./brand-logo";
+import { RECOMMEND_MOBILE_QUERY } from "~/lib/video-layout";
 
 export function Shell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const watch = pathname.startsWith("/watch");
+  const recommend = pathname === "/recommend";
   const [expanded, setExpanded] = useState<boolean | null>(null);
   const [overlay, setOverlay] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -40,13 +42,18 @@ export function Shell({ children }: { children: React.ReactNode }) {
   }, [overlay]);
 
   function toggleSidebar() {
-    if (watch || window.innerWidth < 1312) setOverlay((value) => !value);
+    if (
+      watch ||
+      window.innerWidth < 1312 ||
+      (recommend && window.matchMedia(RECOMMEND_MOBILE_QUERY).matches)
+    )
+      setOverlay((value) => !value);
     else setExpanded((value) => !(value ?? true));
   }
 
   return (
     <div
-      className={`site-shell ${watch ? "watch-shell" : ""} sidebar-${expanded === null ? "auto" : expanded ? "expanded" : "collapsed"} ${overlay ? "sidebar-overlay-open" : ""}`}
+      className={`site-shell ${watch ? "watch-shell" : ""} ${recommend ? "recommend-shell" : ""} sidebar-${expanded === null ? "auto" : expanded ? "expanded" : "collapsed"} ${overlay ? "sidebar-overlay-open" : ""}`}
     >
       <header className={`masthead ${searchOpen ? "mobile-search-open" : ""}`}>
         <div className="header-start">

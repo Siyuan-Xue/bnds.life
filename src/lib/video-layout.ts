@@ -1,3 +1,6 @@
+// Keep in sync with the recommendation layout media query in globals.css.
+export const RECOMMEND_MOBILE_QUERY = "(max-aspect-ratio: 1/1)";
+
 export function videoAspectRatio(
   width: number,
   height: number,

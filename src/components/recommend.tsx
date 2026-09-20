@@ -13,7 +13,10 @@ import { Story } from "./story";
 import { Icon } from "./icon";
 import { Player } from "./player";
 import { isPlaybackShortcut } from "~/lib/shortcuts";
-import { recommendationAspectRatio } from "~/lib/video-layout";
+import {
+  recommendationAspectRatio,
+  RECOMMEND_MOBILE_QUERY,
+} from "~/lib/video-layout";
 
 export function Recommend({ videos }: { videos: Video[] }) {
   const scroll = useRef<HTMLDivElement>(null);
@@ -29,7 +32,7 @@ export function Recommend({ videos }: { videos: Video[] }) {
   const storyButton = useRef<HTMLButtonElement>(null);
   const panel = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    const query = window.matchMedia("(max-width: 791px)");
+    const query = window.matchMedia(RECOMMEND_MOBILE_QUERY);
     const sync = () => setCompact(query.matches);
     sync();
     query.addEventListener("change", sync);
@@ -108,7 +111,7 @@ export function Recommend({ videos }: { videos: Video[] }) {
       panel.current
         ?.querySelector<HTMLButtonElement>('button[aria-label="关闭故事"]')
         ?.focus();
-  }, [storyOpen]);
+  }, [storyOpen, compact]);
   const current = videos[active];
   if (!current) return <p className="empty-state">暂时没有视频</p>;
   return (
@@ -137,7 +140,7 @@ export function Recommend({ videos }: { videos: Video[] }) {
         {videos.map((video, index) => {
           const ratio = recommendationAspectRatio(
             ratios[video.source],
-            storyOpen,
+            storyOpen && !compact,
           );
           return (
             <article
