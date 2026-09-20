@@ -806,16 +806,23 @@ p {
 }
 .story-dialog {
   position: fixed;
-  inset: auto auto 0 50%;
+  /* A rounded overlay needs space on every outside edge, including safe areas. */
+  --story-edge-gap: max(
+    12px,
+    env(safe-area-inset-left, 0px),
+    env(safe-area-inset-right, 0px)
+  );
+  --story-bottom-gap: max(12px, env(safe-area-inset-bottom, 0px));
+  inset: auto auto var(--story-bottom-gap) 50%;
   transform: translateX(-50%);
-  width: min(100vw, 560px);
+  width: min(calc(100% - 2 * var(--story-edge-gap)), 560px);
   height: min(75dvh, 640px);
-  max-width: 100vw;
-  max-height: calc(100dvh - 56px);
+  max-width: calc(100% - 2 * var(--story-edge-gap));
+  max-height: calc(100dvh - 56px - 12px - var(--story-bottom-gap));
   margin: 0;
   padding: 0;
   border: 0;
-  border-radius: 12px 12px 0 0;
+  border-radius: 12px;
   overflow: hidden;
   background: #fff;
   color: var(--text);
@@ -915,6 +922,10 @@ p {
   .home-page {
     padding: 0 0 32px;
   }
+  /* Full-width covers meet the page edges, so they must have square corners. */
+  .home-page .thumbnail {
+    border-radius: 0;
+  }
   .browse-toolbar {
     padding: 0 12px;
     height: 64px;
@@ -1011,6 +1022,10 @@ p {
     min-height: 0;
     height: calc(100dvh - 56px);
     padding: 0;
+  }
+  /* Mobile frames fill one viewport axis; this also covers inactive posters. */
+  .feed-player {
+    border-radius: 0;
   }
   .feed-item,
   .has-story .feed-item {
