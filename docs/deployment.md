@@ -1,24 +1,27 @@
 # SSH 部署记录
 
-2026-09-20：当前网站已部署到 [http://<SERVER_IP>](http://<SERVER_IP>)，应用版本为 `c3c884a`。用户选择本次先使用服务器 IP，域名解析和 HTTPS 暂不配置。源码已推送到现有私有仓库 `Siyuan-Xue/bnds.life` 的 `main`。
+2026-09-20：当前网站通过 [https://xuesiyuan.com.cn](https://xuesiyuan.com.cn) 访问，应用版本为 `c3c884a`。`bnds.life` 正在备案，按用户要求暂时使用已备案的 `xuesiyuan.com.cn`。原 IP 地址 [http://<SERVER_IP>](http://<SERVER_IP>) 保留。源码保存在现有私有仓库 `Siyuan-Xue/bnds.life` 的 `main`。
 
 ## 服务器与运行方式
 
 - SSH：`<SSH_USER>@<SERVER_IP>`，Ubuntu 24.04；所有服务器操作通过 SSH 完成。
 - Node.js 26.9.0、pnpm 12.4.2，与此次本地验收版本一致。Node 官方二进制已通过官方 SHA256 校验，安装在 `/opt/node-v26.9.0-linux-x64`。
-- Nginx 接收公网 HTTP 80 请求，代理至 `127.0.0.1:3000`。
+- Nginx 接收公网 HTTP 80 和 HTTPS 443 请求，代理至 `127.0.0.1:3000`；临时域名的 HTTP 请求以 308 跳转至 HTTPS，保留路径和查询参数。
 - Next.js 由 `bndslife.service` 管理，以无登录权限的专用用户 `bndslife` 运行；异常退出自动重启，已设置开机自启。
 - 生产数据库为 Ubuntu 软件源维护的 PostgreSQL 16.15，数据库／角色均为 `bndslife`，仅监听本机。当前四张账户基础表已初始化；未开放登录，也未导入本地数据。开发数据库仍为 PostgreSQL 18。
 
 ## 路径
 
-| 内容 | 服务器路径 |
-| --- | --- |
-| 当前版本链接 | `/srv/bnds-life/current` |
-| 应用发布目录 | `/srv/bnds-life/releases/c3c884a` |
-| 独立生产环境配置 | `/srv/bnds-life/shared/.env` |
-| systemd 服务 | `/etc/systemd/system/bndslife.service` |
-| Nginx 站点 | `/etc/nginx/sites-available/bndslife` |
+| 内容             | 服务器路径                                             |
+| ---------------- | ------------------------------------------------------ |
+| 当前版本链接     | `/srv/bnds-life/current`                               |
+| 应用发布目录     | `/srv/bnds-life/releases/c3c884a`                      |
+| 独立生产环境配置 | `/srv/bnds-life/shared/.env`                           |
+| systemd 服务     | `/etc/systemd/system/bndslife.service`                 |
+| Nginx 站点       | `/etc/nginx/sites-available/bndslife`                  |
+| HTTPS 证书       | `/etc/letsencrypt/live/xuesiyuan.com.cn/fullchain.pem` |
+| HTTP-01 验证目录 | `/var/www/letsencrypt`                                 |
+| 续期后重载钩子   | `/etc/letsencrypt/renewal-hooks/deploy/reload-nginx`   |
 
 生产环境的数据库密码和 Better Auth 密钥在服务器随机生成，不复制本地 `.env`，不写入 Git。配置文件权限为 `640`，所在目录为 `750`；仅部署账户和应用组可读取。项目内的 [systemd 配置](../ops/bndslife.service) 和 [Nginx 配置](../ops/nginx.conf) 不含密钥。
 
@@ -45,4 +48,21 @@ sudo nginx -t
 curl -I http://127.0.0.1:3000/
 ```
 
-后续启用域名时，先将 `bnds.life` 的 A 记录指向服务器，再配置证书与续期，将生产 `BETTER_AUTH_URL` 更新为实际 HTTPS 地址。
+## 临时域名与 HTTPS
+
+用户明确授权操作 DNSPod 后，将 `xuesiyuan.com.cn` 的 `@` A 记录由 `<OLD_SERVER_IP>` 改为 `<SERVER_IP>`，TTL 保持 600 秒；`www` 记录未改动。DNSPod 两台权威服务器及公共 DNS 已验证返回新 IP。切换期间部分递归 DNS 仍会短暂缓存旧地址。
+
+使用 Ubuntu 官方软件源的 Certbot，通过 Nginx webroot 的 HTTP-01 验证签发 Let's Encrypt ECDSA 证书，首次证书到期日为 2026-12-19。仅启用 TLS 1.2／1.3，私钥保留在服务器。生产 `BETTER_AUTH_URL` 已更新为 `https://xuesiyuan.com.cn`，其他生产密钥与权限保持原样。
+
+`certbot.timer` 已启用。续期后由 [重载钩子](../ops/reload-nginx) 先执行 `nginx -t`，再重载 Nginx。完整续期演练（含 deploy hook）已通过：
+
+```sh
+sudo certbot renew --cert-name xuesiyuan.com.cn --dry-run --run-deploy-hooks --no-random-sleep-on-renew
+systemctl status certbot.timer --no-pager
+```
+
+HTTPS 首页、推荐、观看页、图标、目录与空会话 API 均返回 200，证书校验结果为 0；视频 Range 返回 206／1024 字节。新服务器公网 443 可达，HTTP 跳转保留路径及查询参数；原 IP HTTP 仍返回 200。浏览器已确认 HTTPS 月份首页与推荐自动播放正常，视频来源为同域 HTTPS，媒体无错误，推荐页控制台无警告或错误。
+
+重新搭建时，先提供 HTTP-01 目录并签发证书，再安装 [完整 Nginx 配置](../ops/nginx.conf)，避免证书尚不存在时加载 HTTPS 配置。将 `ops/reload-nginx` 以 755 权限安装到上述续期钩子路径。首次切换前的服务器 Nginx 配置备份位于 `<NGINX_CONFIG_BACKUP>`。
+
+等 `bnds.life` 备案完成后，再为其设置解析、签发独立证书并更新 Nginx 与生产 `BETTER_AUTH_URL`。迁移可继续使用现有发布目录和数据库，无需重新导入数据；届时再决定临时域名是否重定向至正式域名。

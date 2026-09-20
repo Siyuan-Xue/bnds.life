@@ -53,4 +53,4 @@ pnpm start
 
 ## 服务器部署
 
-当前已通过 SSH 部署到 [http://<SERVER_IP>](http://<SERVER_IP>)，使用 Nginx、systemd 与独立生产数据库。按用户选择暂时使用 IP。运行版本、服务路径和更新／恢复方式见 [部署记录](docs/deployment.md)。
+当前访问地址为 [https://xuesiyuan.com.cn](https://xuesiyuan.com.cn)，使用 Nginx、systemd 与独立生产数据库，HTTPS 证书自动续期。此域名按用户要求临时使用，待 `bnds.life` 备案完成后迁移。运行版本、服务路径和更新／恢复方式见 [部署记录](docs/deployment.md)。

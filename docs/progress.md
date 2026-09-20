@@ -45,3 +45,5 @@
 - 菜单入口精简：常驻侧栏已可见的电脑首页／推荐页隐藏三横线按钮；仅在手机版或没有常驻侧栏的观看页提供菜单入口，沿用现有覆盖导航和统一 1:1 断点。
 
 - SSH 首次部署：已将应用版本 c3c884a 推送 GitHub，并通过 SSH/SCP 发布到 <SERVER_IP>。服务器按锁文件安装依赖，11 项测试与生产构建通过；独立生产 PostgreSQL、Nginx、systemd 开机自启完成。公网页面、API、视频 Range 和浏览器播放验收通过。用户选择先使用 IP，域名／HTTPS 留待后续，详见 docs/deployment.md。
+
+- 临时域名 HTTPS：按用户授权在 DNSPod 将 xuesiyuan.com.cn 的主域名 A 记录切换至 <SERVER_IP>，保留 www 原记录。通过 SSH 配置 Let's Encrypt 证书、HTTP 308 跳转、Certbot 自动续期及 Nginx 重载钩子，并更新生产 BETTER_AUTH_URL。HTTPS 页面／API／证书校验、视频 Range 及包含重载钩子的续期演练通过。等待 bnds.life 备案完成后再迁移，应用版本和数据沿用现有服务器。
