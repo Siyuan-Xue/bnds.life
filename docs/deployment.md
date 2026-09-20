@@ -1,6 +1,6 @@
 # SSH 部署记录
 
-2026-09-20：当前网站通过 [https://xuesiyuan.com.cn](https://xuesiyuan.com.cn) 访问，应用版本为 `c3c884a`。`bnds.life` 正在备案，按用户要求暂时使用已备案的 `xuesiyuan.com.cn`。原 IP 地址 [http://<SERVER_IP>](http://<SERVER_IP>) 保留。源码保存在现有私有仓库 `Siyuan-Xue/bnds.life` 的 `main`。
+2026-09-20：当前网站通过 [https://xuesiyuan.com.cn](https://xuesiyuan.com.cn) 访问，应用版本为 `e7b4b69`。`bnds.life` 正在备案，按用户要求暂时使用已备案的 `xuesiyuan.com.cn`。原 IP 地址 [http://<SERVER_IP>](http://<SERVER_IP>) 保留。源码保存在现有私有仓库 `Siyuan-Xue/bnds.life` 的 `main`。
 
 ## 服务器与运行方式
 
@@ -15,7 +15,7 @@
 | 内容             | 服务器路径                                             |
 | ---------------- | ------------------------------------------------------ |
 | 当前版本链接     | `/srv/bnds-life/current`                               |
-| 应用发布目录     | `/srv/bnds-life/releases/c3c884a`                      |
+| 应用发布目录     | `/srv/bnds-life/releases/e7b4b69`                      |
 | 独立生产环境配置 | `/srv/bnds-life/shared/.env`                           |
 | systemd 服务     | `/etc/systemd/system/bndslife.service`                 |
 | Nginx 站点       | `/etc/nginx/sites-available/bndslife`                  |
@@ -80,3 +80,16 @@ HTTPS 首页、推荐、观看页、图标、目录与空会话 API 均返回 20
 用户发现 HDR→SDR 过曝后，已暂停队列、定位 Mobius 曲线抬高中间亮度，改用经过同帧 Apple forceSDR 对照的 Hable；15:43 首条播放版和封面重新生成并更新为内容哈希 URL，原片保持相同 SHA256。详情见 [色彩修正](hdr-color-correction.md)。
 
 当前首批三段的传输仍在继续。服务器一次性任务 bndslife-first-video-import.service 只处理 /srv/bnds-life/media/incoming/20260920-first/batch.json 中明确列出的文件，先检查完整大小和 SHA256，再转换、发布，批末备份。进度文件在同目录 processing.json。后续新增下载不属于当前清单。
+
+
+## 原画优先与首批上传完成（2026-09-20 17:31）
+
+已部署应用 e7b4b69，current 与 media-tools 均指向 releases/e7b4b69。首批三个文件全部经 SCP 上传（中断部分以 SCP 补传剩余字节，拼合后全文件 SHA256 与本地相同），全部发布：
+
+- 2023-07-15 183305：8aaa24e4-6149-452f-8bc7-10fb9fc1595f
+- 2023-07-16 180711：be3e040d-1424-4ab6-8503-8d25e83ab628
+- 2023-07-18 175951：d190402b-8f26-4f08-9db3-4855220b2ef6
+
+运行增量迁移 002 后，为三条补建 native 资源；音视频流按 SHA256 验证无损，HEVC Main 10、HLG、Dolby Vision 8.4 和旋转信息保留，原片归档未改动。所有原画源和兼容源 HTTPS Range 均为 206；首页、推荐、观看页和封面为 200，原片私有目录维持 404。服务器 21 项测试、隔离数据库集成测试、类型检查及生产构建通过。浏览器首页显示三条，实际观看页已选择 native 资源并播放。
+
+迁移前备份 /srv/bnds-life/backups/<BACKUP_ID>；切换后备份 /srv/bnds-life/backups/<BACKUP_ID>。原应用 ce8a6fd 与兼容资源保留。首批导入 systemd 任务以 success 退出，本次清单已完成；未设置监视后续文件的常驻任务。
