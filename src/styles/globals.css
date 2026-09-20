@@ -410,6 +410,18 @@ p {
   flex-direction: column;
   gap: 8px;
 }
+@media (min-width: 1000px) {
+  .related-videos {
+    /* Let the player and story set the grid height, independent of list length. */
+    contain: size;
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-width: thin;
+  }
+  .related-videos .compact-card {
+    flex-shrink: 0;
+  }
+}
 .compact-card {
   display: flex;
   gap: 12px;
