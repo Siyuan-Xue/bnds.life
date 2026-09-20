@@ -163,6 +163,7 @@ export function Player({
         }}
         onError={() => setError(true)}
       />
+      {feed && <div className="feed-scrim" aria-hidden="true" />}
       {error ? (
         <div className="player-error">
           视频暂时无法播放
@@ -225,7 +226,7 @@ export function Player({
             aria-label="播放进度"
             aria-valuetext={`${formatDuration(current)} / ${formatDuration(duration)}`}
             style={{
-              background: `linear-gradient(to right, #f03 0%, #f03 ${(current / (duration || 1)) * 100}%, #ffffff60 ${(current / (duration || 1)) * 100}%, #ffffff60 100%)`,
+              background: `linear-gradient(to right, var(--red) 0%, var(--red) ${(current / (duration || 1)) * 100}%, #ffffff60 ${(current / (duration || 1)) * 100}%, #ffffff60 100%)`,
             }}
           />
           {!feed && (

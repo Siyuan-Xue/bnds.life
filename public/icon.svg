@@ -1,1 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="16" fill="#ff0033"/><path d="M21 16v32M43 16v32" stroke="white" stroke-width="9"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <title>BNDS.life</title>
+  <path fill="#006ECF" d="M32 4a28 28 0 0 1 28 28h-9a19 19 0 0 0-19-19Z"/>
+  <path fill="#F22A1A" d="M60 32a28 28 0 0 1-28 28v-9a19 19 0 0 0 19-19Z"/>
+  <path fill="#FF8500" d="M32 60A28 28 0 0 1 4 32h9a19 19 0 0 0 19 19Z"/>
+  <path fill="#73B338" d="M4 32A28 28 0 0 1 32 4v9a19 19 0 0 0-19 19Z"/>
+  <defs>
+    <clipPath id="play"><path d="M28 20.5Q26 19.4 26 22v20q0 2.6 2 1.5l17.5-10q2.5-1.5 0-3Z"/></clipPath>
+  </defs>
+  <g clip-path="url(#play)">
+    <path fill="#FF8500" d="M26 19h22L34 32l-8-6Z"/>
+    <path fill="#73B338" d="m26 26 8 6-8 7Z"/>
+    <path fill="#006ECF" d="m34 32 14 13H26v-6Z"/>
+    <path fill="#F22A1A" d="m34 32 8-7 7 7-7 7Z"/>
+  </g>
+</svg>

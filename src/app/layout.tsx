@@ -9,13 +9,13 @@ export const metadata: Metadata = {
   title: "BNDS.life · 十一小日子",
   description: "在十一小日子，重看那些普通而珍贵的校园时光。",
   icons: [
-    { rel: "icon", type: "image/png", url: "/brand/logo-transparent.png" },
     {
       rel: "icon",
-      type: "image/png",
-      url: "/brand/logo-dark.png",
-      media: "(prefers-color-scheme: dark)",
+      type: "image/x-icon",
+      sizes: "16x16 32x32 48x48 64x64 128x128 256x256",
+      url: "/favicon.ico?v=2",
     },
+    { rel: "icon", type: "image/svg+xml", sizes: "any", url: "/icon.svg?v=2" },
   ],
 };
 

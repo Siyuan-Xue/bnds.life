@@ -166,7 +166,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
               <Icon name="close" />
             </button>
           </div>
-          <p>账户功能尚未开放。</p>
+          <p className="account-notice">账户功能尚未开放。</p>
           <p>你可以直接浏览首页、观看视频和使用推荐。</p>
           <button
             className="primary-button"
