@@ -596,6 +596,9 @@ p {
   color: var(--secondary);
 }
 .recommend-layout {
+  --feed-height: max(0px, calc(100dvh - 96px));
+  --feed-story-width: min(33vw, 480px);
+  --feed-story-player-space: 96px;
   --feed-navigation-size: 56px;
   --feed-navigation-inset: 24px;
   --feed-end-space: calc(
@@ -620,7 +623,6 @@ p {
   display: none;
 }
 .feed-item {
-  --feed-height: max(0px, calc(100dvh - 96px));
   --feed-reserved-width: calc(var(--feed-end-space) + 72px);
   --feed-offset: var(--feed-end-space);
   height: calc(100dvh - 80px);
@@ -764,11 +766,28 @@ p {
   background: #e5e5e5;
 }
 .feed-story {
-  width: min(33vw, 480px);
+  /* Match the adjacent 9:16 frame, including when its width limits its height. */
+  --story-frame-height: max(
+    0px,
+    min(
+      var(--feed-height),
+      calc(
+        (
+            100vw - var(--sidebar-width) - var(--feed-story-width) -
+              var(--feed-end-space) - var(--feed-story-player-space)
+          ) *
+          16 / 9
+      )
+    )
+  );
+  width: var(--feed-story-width);
   flex-shrink: 0;
-  height: calc(100% - 36px);
+  height: var(--story-frame-height);
   align-self: flex-start;
-  margin: 0 var(--feed-end-space) 0 0;
+  margin: calc(
+      (max(200px, calc(100dvh - 80px)) - var(--story-frame-height)) / 2
+    )
+    var(--feed-end-space) 0 0;
   border: 1px solid #d9d9d9;
   border-radius: 12px;
   overflow: hidden;
@@ -776,7 +795,7 @@ p {
   z-index: 30;
 }
 .has-story .feed-item {
-  --feed-reserved-width: 96px;
+  --feed-reserved-width: var(--feed-story-player-space);
   --feed-offset: 64px;
 }
 .story-dialog {
