@@ -6,7 +6,7 @@ import { Shell } from "~/components/shell";
 import { TRPCReactProvider } from "~/trpc/react";
 
 export const metadata: Metadata = {
-  title: "BNDS.life · 十一小日子",
+  title: "BNDS.life",
   description: "在十一小日子，重看那些普通而珍贵的校园时光。",
   icons: [
     {
