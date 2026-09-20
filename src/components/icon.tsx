@@ -1,7 +1,9 @@
 import type { SVGProps } from "react";
+import { suppliedIcons } from "./supplied-icons";
 
 const paths = {
   menu: "M3 6h18M3 12h18M3 18h18",
+  search: "M20 20l-5-5M17 10a7 7 0 1 1-14 0 7 7 0 0 1 14 0",
   close: "m6 6 12 12M6 18 18 6",
   play: "m8 5 11 7-11 7Z",
   pause: "M8 5v14M16 5v14",
@@ -19,50 +21,43 @@ const paths = {
   back: "m12 5-7 7 7 7M5 12h16",
 } as const;
 
-const suppliedIcons = {
-  home: "/icons/home.svg?v=2",
-  recommend: "/icons/recommend.svg?v=2",
-  search: "/icons/search.svg?v=2",
-  user: "/icons/login.svg?v=2",
-} as const;
-
 export type IconName = keyof typeof paths | keyof typeof suppliedIcons;
 
 export function Icon({
   name,
+  selected = false,
+  className,
   ...props
-}: SVGProps<SVGSVGElement> & { name: IconName }) {
-  if (name in suppliedIcons) {
-    return (
-      <svg
-        width="24"
-        height="24"
-        viewBox="0 0 24 24"
-        aria-hidden="true"
-        {...props}
-      >
-        <image
-          href={suppliedIcons[name as keyof typeof suppliedIcons]}
-          width="24"
-          height="24"
-        />
-      </svg>
-    );
-  }
+}: SVGProps<SVGSVGElement> & { name: IconName; selected?: boolean }) {
+  const supplied =
+    name in suppliedIcons
+      ? suppliedIcons[name as keyof typeof suppliedIcons]
+      : undefined;
   return (
     <svg
+      className={className ? `ui-icon ${className}` : "ui-icon"}
       width="24"
       height="24"
-      viewBox="0 0 24 24"
+      viewBox={supplied?.viewBox ?? "0 0 24 24"}
       fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
+      stroke={supplied ? "none" : "currentColor"}
+      strokeWidth={supplied ? undefined : 2}
       strokeLinecap="round"
       strokeLinejoin="round"
+      shapeRendering="geometricPrecision"
       aria-hidden="true"
+      focusable="false"
       {...props}
     >
-      <path d={paths[name as keyof typeof paths]} />
+      {supplied ? (
+        selected ? (
+          (supplied.selected ?? supplied.default)
+        ) : (
+          supplied.default
+        )
+      ) : (
+        <path d={paths[name as keyof typeof paths]} />
+      )}
     </svg>
   );
 }

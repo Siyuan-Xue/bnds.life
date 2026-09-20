@@ -13,9 +13,23 @@ export const metadata: Metadata = {
       rel: "icon",
       type: "image/x-icon",
       sizes: "16x16 32x32 48x48 64x64 128x128 256x256",
-      url: "/favicon.ico?v=2",
+      url: "/favicon.ico?v=3",
     },
-    { rel: "icon", type: "image/svg+xml", sizes: "any", url: "/icon.svg?v=2" },
+    {
+      rel: "icon",
+      type: "image/x-icon",
+      sizes: "16x16 32x32 48x48 64x64 128x128 256x256",
+      url: "/brand/favicon-dark.ico?v=3",
+      media: "(prefers-color-scheme: dark)",
+    },
+    { rel: "icon", type: "image/svg+xml", sizes: "any", url: "/icon.svg?v=3" },
+    {
+      rel: "icon",
+      type: "image/svg+xml",
+      sizes: "any",
+      url: "/brand/favicon-dark.svg?v=3",
+      media: "(prefers-color-scheme: dark)",
+    },
   ],
 };
 

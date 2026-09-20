@@ -132,7 +132,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
               aria-current={pathname === "/" ? "page" : undefined}
               onClick={() => setOverlay(false)}
             >
-              <Icon name="home" />
+              <Icon name="home" selected={pathname === "/"} />
               <span>首页</span>
             </Link>
             <Link
@@ -140,7 +140,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
               aria-current={pathname === "/recommend" ? "page" : undefined}
               onClick={() => setOverlay(false)}
             >
-              <Icon name="recommend" />
+              <Icon name="recommend" selected={pathname === "/recommend"} />
               <span>推荐</span>
             </Link>
           </nav>
