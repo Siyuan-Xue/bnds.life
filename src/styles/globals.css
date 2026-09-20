@@ -377,14 +377,22 @@ p {
   grid-column: 1;
   grid-row: 2;
 }
+.watch-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-top: 12px;
+}
 .watch-details h1 {
+  min-width: 0;
   font-size: 20px;
   line-height: 28px;
   font-weight: 700;
-  margin-top: 12px;
+  overflow-wrap: anywhere;
 }
 .watch-date {
-  margin-top: 4px;
+  flex-shrink: 0;
+  white-space: nowrap;
   color: var(--secondary);
   font-size: 14px;
   line-height: 20px;
