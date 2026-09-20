@@ -411,6 +411,10 @@ p {
   gap: 8px;
 }
 @media (min-width: 1000px) {
+  .watch-layout {
+    /* Fill the space below the 56px masthead, including this layout's padding. */
+    min-height: calc(100dvh - 56px);
+  }
   .related-videos {
     /* Let the player and story set the grid height, independent of list length. */
     contain: size;
