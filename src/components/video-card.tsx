@@ -9,6 +9,7 @@ export function VideoCard({
   video: Video;
   compact?: boolean;
 }) {
+  const Heading = compact ? "h2" : "h3";
   return (
     <article className={`video-card ${compact ? "compact-card" : ""}`}>
       <Link
@@ -27,16 +28,10 @@ export function VideoCard({
         <span className="duration">{formatDuration(video.duration)}</span>
       </Link>
       <div className="video-card-info">
-        {!compact && (
-          <span className="avatar" aria-hidden="true">
-            十
-          </span>
-        )}
         <div className="video-card-copy">
-          <h2>
+          <Heading>
             <Link href={`/watch/${video.id}`}>{video.title}</Link>
-          </h2>
-          <p>{video.author}</p>
+          </Heading>
           <p>示例视频</p>
         </div>
       </div>

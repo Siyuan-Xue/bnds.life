@@ -3,11 +3,10 @@ import { useCallback, useState, type CSSProperties } from "react";
 import type { Video } from "~/lib/videos";
 import { watchColumnAspectRatio } from "~/lib/video-layout";
 import { Player } from "./player";
-import { Comments } from "./comments";
+import { Story } from "./story";
 import { VideoCard } from "./video-card";
 
 export function Watch({ video, related }: { video: Video; related: Video[] }) {
-  const [description, setDescription] = useState(false);
   const [geometry, setGeometry] = useState<{ source: string; ratio: number }>();
   const rememberRatio = useCallback((source: string, ratio: number) => {
     setGeometry((previous) =>
@@ -32,28 +31,7 @@ export function Watch({ video, related }: { video: Video; related: Video[] }) {
       </div>
       <section className="watch-details">
         <h1>{video.title}</h1>
-        <div className="watch-byline">
-          <span className="avatar">十</span>
-          <div>
-            <strong>{video.author}</strong>
-            <p>占位视频</p>
-          </div>
-        </div>
-        <div className="video-description">
-          <strong>示例内容</strong>
-          <p>
-            {description
-              ? video.description
-              : "这是一段用于预览浏览和播放效果的占位视频。"}
-            <button
-              onClick={() => setDescription(!description)}
-              aria-expanded={description}
-            >
-              {description ? "收起" : "展开"}
-            </button>
-          </p>
-        </div>
-        <Comments />
+        <Story video={video} />
       </section>
       <aside className="related-videos" aria-label="更多视频">
         {related.map((item) => (

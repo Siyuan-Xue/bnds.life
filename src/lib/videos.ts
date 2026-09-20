@@ -1,11 +1,11 @@
 export type Video = {
   id: string;
   title: string;
-  author: string;
   duration: number;
   source: string;
   poster: string;
-  description: string;
+  story?: string;
+  recordedAt?: string;
 };
 
 const titles = [
@@ -40,21 +40,35 @@ const sources = [
   "landscape",
 ];
 
+// Demo dates for the placeholder catalog, not dates of real campus footage.
+const recordedDates = [
+  "2021-05-18",
+  "2021-06-03",
+  "2021-06-25",
+  "2021-06-01",
+  "2021-04-09",
+  "2021-04-21",
+  "2020-10-16",
+  "2020-09-07",
+  "2021-05-06",
+  "2021-05-27",
+  "2020-09-15",
+  "2020-10-08",
+];
+
 const videos: Video[] = titles.map((title, index) => ({
   id: `memory-${String(index + 1).padStart(2, "0")}`,
   title,
-  author: "BNDS.life",
   duration: 20,
   source: `/media/placeholder-${sources[index]}.mp4`,
   poster: `/media/poster-${index + 1}.svg`,
-  description:
-    "这是一段用于预览浏览和播放效果的占位视频，尚未加入真实校园影像。标题与评论均为示例内容。",
+  recordedAt: recordedDates[index],
 }));
 
 export function listVideos(query = ""): Video[] {
   const normalized = query.trim().toLocaleLowerCase();
   return videos.filter((video) =>
-    `${video.title} ${video.author}`.toLocaleLowerCase().includes(normalized),
+    video.title.toLocaleLowerCase().includes(normalized),
   );
 }
 

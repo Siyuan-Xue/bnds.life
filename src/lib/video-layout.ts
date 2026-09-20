@@ -15,14 +15,9 @@ export function videoAspectRatio(
 
 export function recommendationAspectRatio(
   ratio: number | undefined,
-  commentsOpen: boolean,
+  storyOpen: boolean,
 ): number {
-  if (
-    commentsOpen ||
-    ratio === undefined ||
-    !Number.isFinite(ratio) ||
-    ratio <= 0
-  )
+  if (storyOpen || ratio === undefined || !Number.isFinite(ratio) || ratio <= 0)
     return 9 / 16;
   return Math.min(1, Math.max(9 / 16, ratio));
 }

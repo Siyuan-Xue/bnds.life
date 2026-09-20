@@ -9,7 +9,7 @@ import {
   type CSSProperties,
 } from "react";
 import type { Video } from "~/lib/videos";
-import { Comments } from "./comments";
+import { Story } from "./story";
 import { Icon } from "./icon";
 import { Player } from "./player";
 import { isPlaybackShortcut } from "~/lib/shortcuts";
@@ -18,7 +18,7 @@ import { recommendationAspectRatio } from "~/lib/video-layout";
 export function Recommend({ videos }: { videos: Video[] }) {
   const scroll = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(0);
-  const [comments, setComments] = useState(false);
+  const [storyOpen, setStoryOpen] = useState(false);
   const [compact, setCompact] = useState(false);
   const [ratios, setRatios] = useState<Record<string, number>>({});
   const rememberRatio = useCallback((source: string, ratio: number) => {
@@ -26,7 +26,7 @@ export function Recommend({ videos }: { videos: Video[] }) {
       previous[source] === ratio ? previous : { ...previous, [source]: ratio },
     );
   }, []);
-  const commentsButton = useRef<HTMLButtonElement>(null);
+  const storyButton = useRef<HTMLButtonElement>(null);
   const panel = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const query = window.matchMedia("(max-width: 791px)");
@@ -49,21 +49,21 @@ export function Recommend({ videos }: { videos: Video[] }) {
     },
     [active, videos.length],
   );
-  const closeComments = useCallback(() => {
-    setComments(false);
-    requestAnimationFrame(() => commentsButton.current?.focus());
+  const closeStory = useCallback(() => {
+    setStoryOpen(false);
+    requestAnimationFrame(() => storyButton.current?.focus());
   }, []);
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
       if (!isPlaybackShortcut(event) || document.querySelector("dialog[open]"))
         return;
       const target = event.target as HTMLElement;
-      if (event.key === "Escape" && comments) {
+      if (event.key === "Escape" && storyOpen) {
         event.preventDefault();
-        closeComments();
+        closeStory();
         return;
       }
-      if (comments && compact && event.key === "Tab") {
+      if (storyOpen && compact && event.key === "Tab") {
         const controls = Array.from(
           panel.current?.querySelectorAll<HTMLElement>(
             'button:not(:disabled),a[href],input,select,textarea,[tabindex="0"]',
@@ -90,7 +90,7 @@ export function Recommend({ videos }: { videos: Video[] }) {
       }
       if (
         target.closest(
-          "input,textarea,select,button,[contenteditable],dialog[open],.comments",
+          "input,textarea,select,button,[contenteditable],dialog[open],.story",
         ) ||
         document.querySelector("dialog[open]")
       )
@@ -102,20 +102,20 @@ export function Recommend({ videos }: { videos: Video[] }) {
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [closeComments, comments, compact, navigate]);
+  }, [closeStory, storyOpen, compact, navigate]);
   useEffect(() => {
-    if (comments)
+    if (storyOpen)
       panel.current
-        ?.querySelector<HTMLButtonElement>('button[aria-label="关闭评论"]')
+        ?.querySelector<HTMLButtonElement>('button[aria-label="关闭故事"]')
         ?.focus();
-  }, [comments]);
+  }, [storyOpen]);
   const current = videos[active];
   if (!current) return <p className="empty-state">暂时没有视频</p>;
   return (
-    <div className={`recommend-layout ${comments ? "has-comments" : ""}`}>
+    <div className={`recommend-layout ${storyOpen ? "has-story" : ""}`}>
       <div
         className="feed-scroll"
-        inert={comments && compact}
+        inert={storyOpen && compact}
         ref={scroll}
         onScroll={() => {
           const root = scroll.current;
@@ -137,7 +137,7 @@ export function Recommend({ videos }: { videos: Video[] }) {
         {videos.map((video, index) => {
           const ratio = recommendationAspectRatio(
             ratios[video.source],
-            comments,
+            storyOpen,
           );
           return (
             <article
@@ -165,29 +165,27 @@ export function Recommend({ videos }: { videos: Video[] }) {
                 )}
                 <div className="feed-caption">
                   <p>
-                    <span className="avatar small">十</span>
-                    <strong>{video.author}</strong>
                     <span className="feed-sample">占位预览</span>
                   </p>
                   <Link href={`/watch/${video.id}`}>{video.title}</Link>
                 </div>
                 <div className="feed-actions">
                   <button
-                    ref={index === active ? commentsButton : undefined}
-                    aria-label={`查看${video.title}的评论`}
-                    onClick={() => setComments((value) => !value)}
-                    aria-expanded={index === active && comments}
+                    ref={index === active ? storyButton : undefined}
+                    aria-label={`查看${video.title}的故事`}
+                    onClick={() => setStoryOpen((value) => !value)}
+                    aria-expanded={index === active && storyOpen}
                   >
-                    <Icon name="comment" />
+                    <Icon name="story" />
                   </button>
-                  <span>评论</span>
+                  <span>故事</span>
                 </div>
               </div>
             </article>
           );
         })}
       </div>
-      <div className="feed-navigation" inert={comments && compact}>
+      <div className="feed-navigation" inert={storyOpen && compact}>
         <button
           className="icon-button"
           aria-label="上一个视频"
@@ -205,21 +203,21 @@ export function Recommend({ videos }: { videos: Video[] }) {
           <Icon name="down" />
         </button>
       </div>
-      {comments && (
+      {storyOpen && (
         <>
           <button
-            className="comments-backdrop"
-            aria-label="关闭评论面板"
-            onClick={closeComments}
+            className="story-backdrop"
+            aria-label="关闭故事面板"
+            onClick={closeStory}
           />
           <div
-            className="feed-comments"
+            className="feed-story"
             ref={panel}
             role={compact ? "dialog" : undefined}
             aria-modal={compact || undefined}
-            aria-label="视频评论"
+            aria-label="视频故事"
           >
-            <Comments key={current.id} onClose={closeComments} title="评论" />
+            <Story video={current} onClose={closeStory} />
           </div>
         </>
       )}

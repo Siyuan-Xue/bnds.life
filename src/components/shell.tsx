@@ -2,12 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Icon } from "./icon";
 import { BrandLogo } from "./brand-logo";
-
-const AccountContext = createContext<() => void>(() => undefined);
-export const useAccountDialog = () => useContext(AccountContext);
 
 export function Shell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -15,7 +12,6 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const [expanded, setExpanded] = useState<boolean | null>(null);
   const [overlay, setOverlay] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
-  const dialog = useRef<HTMLDialogElement>(null);
   const menuButton = useRef<HTMLButtonElement>(null);
   const searchInput = useRef<HTMLInputElement>(null);
 
@@ -48,134 +44,98 @@ export function Shell({ children }: { children: React.ReactNode }) {
     else setExpanded((value) => !(value ?? true));
   }
 
-  const openAccount = () => dialog.current?.showModal();
   return (
-    <AccountContext.Provider value={openAccount}>
-      <div
-        className={`site-shell ${watch ? "watch-shell" : ""} sidebar-${expanded === null ? "auto" : expanded ? "expanded" : "collapsed"} ${overlay ? "sidebar-overlay-open" : ""}`}
-      >
-        <header
-          className={`masthead ${searchOpen ? "mobile-search-open" : ""}`}
-        >
-          <div className="header-start">
-            <button
-              ref={menuButton}
-              className="icon-button"
-              aria-label="切换侧栏"
-              onClick={toggleSidebar}
-              aria-expanded={overlay || (expanded ?? undefined)}
-            >
-              <Icon name="menu" />
-            </button>
-            <Link
-              className="brand"
-              href="/"
-              aria-label="BNDS.life · 十一小日子 首页"
-            >
-              <BrandLogo />
-              <span>BNDS.life</span>
-            </Link>
-          </div>
-          <form action="/" className="search-form" role="search">
-            <button
-              className="icon-button search-back"
-              type="button"
-              aria-label="关闭搜索"
-              onClick={() => setSearchOpen(false)}
-            >
-              <Icon name="back" />
-            </button>
-            <input
-              ref={searchInput}
-              type="search"
-              name="q"
-              aria-label="搜索视频"
-              placeholder="搜索"
-              maxLength={200}
-            />
-            <button className="search-submit" aria-label="搜索" type="submit">
-              <Icon name="search" />
-            </button>
-          </form>
-          <div className="header-end">
-            <button
-              className="icon-button mobile-search-button"
-              aria-label="打开搜索"
-              onClick={() => {
-                setSearchOpen(true);
-                requestAnimationFrame(() => searchInput.current?.focus());
-              }}
-            >
-              <Icon name="search" />
-            </button>
-            <button className="sign-in" onClick={openAccount}>
-              <Icon name="user" />
-              <span>登录</span>
-            </button>
-          </div>
-        </header>
-        {overlay && (
+    <div
+      className={`site-shell ${watch ? "watch-shell" : ""} sidebar-${expanded === null ? "auto" : expanded ? "expanded" : "collapsed"} ${overlay ? "sidebar-overlay-open" : ""}`}
+    >
+      <header className={`masthead ${searchOpen ? "mobile-search-open" : ""}`}>
+        <div className="header-start">
           <button
-            tabIndex={-1}
-            className="sidebar-backdrop"
-            aria-label="关闭侧栏"
-            onClick={() => {
-              setOverlay(false);
-              menuButton.current?.focus();
-            }}
-          />
-        )}
-        <aside className="sidebar">
-          <nav aria-label="主导航">
-            <Link
-              href="/"
-              aria-current={pathname === "/" ? "page" : undefined}
-              onClick={() => setOverlay(false)}
-            >
-              <Icon name="home" selected={pathname === "/"} />
-              <span>首页</span>
-            </Link>
-            <Link
-              href="/recommend"
-              aria-current={pathname === "/recommend" ? "page" : undefined}
-              onClick={() => setOverlay(false)}
-            >
-              <Icon name="recommend" selected={pathname === "/recommend"} />
-              <span>推荐</span>
-            </Link>
-          </nav>
-        </aside>
-        <main id="main-content" className="page-content" inert={overlay}>
-          {children}
-        </main>
-        <dialog
-          ref={dialog}
-          className="account-dialog"
-          aria-labelledby="account-title"
-          onClick={(event) => {
-            if (event.target === event.currentTarget) dialog.current?.close();
-          }}
-        >
-          <div className="dialog-heading">
-            <h2 id="account-title">登录 BNDS.life</h2>
-            <button
-              className="icon-button"
-              aria-label="关闭登录窗口"
-              onClick={() => dialog.current?.close()}
-            >
-              <Icon name="close" />
-            </button>
-          </div>
-          <p className="account-notice">账户功能尚未开放。</p>
-          <p>你可以直接浏览首页、观看视频和使用推荐。</p>
-          <button
-            className="primary-button"
-            onClick={() => dialog.current?.close()}
+            ref={menuButton}
+            className="icon-button"
+            aria-label="切换侧栏"
+            onClick={toggleSidebar}
+            aria-expanded={overlay || (expanded ?? undefined)}
           >
-            继续观看
+            <Icon name="menu" />
           </button>
-        </dialog>
-      </div>
-    </AccountContext.Provider>
+          <Link
+            className="brand"
+            href="/"
+            aria-label="BNDS.life · 十一小日子 首页"
+          >
+            <BrandLogo />
+            <span>BNDS.life</span>
+          </Link>
+        </div>
+        <form action="/" className="search-form" role="search">
+          <button
+            className="icon-button search-back"
+            type="button"
+            aria-label="关闭搜索"
+            onClick={() => setSearchOpen(false)}
+          >
+            <Icon name="back" />
+          </button>
+          <input
+            ref={searchInput}
+            type="search"
+            name="q"
+            aria-label="搜索视频"
+            placeholder="搜索"
+            maxLength={200}
+          />
+          <button className="search-submit" aria-label="搜索" type="submit">
+            <Icon name="search" />
+          </button>
+        </form>
+        <div className="header-end">
+          <button
+            className="icon-button mobile-search-button"
+            aria-label="打开搜索"
+            onClick={() => {
+              setSearchOpen(true);
+              requestAnimationFrame(() => searchInput.current?.focus());
+            }}
+          >
+            <Icon name="search" />
+          </button>
+        </div>
+      </header>
+      {overlay && (
+        <button
+          tabIndex={-1}
+          className="sidebar-backdrop"
+          aria-label="关闭侧栏"
+          onClick={() => {
+            setOverlay(false);
+            menuButton.current?.focus();
+          }}
+        />
+      )}
+      <aside className="sidebar">
+        <nav aria-label="主导航">
+          <Link
+            href="/"
+            aria-current={pathname === "/" ? "page" : undefined}
+            onClick={() => setOverlay(false)}
+          >
+            <Icon name="home" selected={pathname === "/"} />
+            <span>首页</span>
+          </Link>
+          <Link
+            href="/recommend"
+            aria-current={pathname === "/recommend" ? "page" : undefined}
+            onClick={() => setOverlay(false)}
+          >
+            <Icon name="recommend" selected={pathname === "/recommend"} />
+            <span>推荐</span>
+          </Link>
+        </nav>
+      </aside>
+      <main id="main-content" className="page-content" inert={overlay}>
+        {children}
+      </main>
+    </div>
   );
 }
