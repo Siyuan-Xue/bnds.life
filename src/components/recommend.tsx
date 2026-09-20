@@ -86,10 +86,14 @@ export function Recommend({ videos }: { videos: Video[] }) {
   useEffect(() => {
     const dialog = storyDialog.current;
     if (!storyOpen) return;
-    if (mobile && dialog && !dialog.open) dialog.showModal();
-    panel.current
-      ?.querySelector<HTMLButtonElement>('button[aria-label="关闭故事"]')
-      ?.focus();
+    if (mobile && dialog) {
+      if (!dialog.open) dialog.showModal();
+      panel.current?.focus({ preventScroll: true });
+    } else {
+      panel.current
+        ?.querySelector<HTMLButtonElement>('button[aria-label="关闭故事"]')
+        ?.focus();
+    }
     return () => dialog?.close();
   }, [storyOpen, mobile]);
   const current = videos[active];
@@ -205,7 +209,7 @@ export function Recommend({ videos }: { videos: Video[] }) {
             if (event.target === event.currentTarget) closeStory();
           }}
         >
-          <div className="story-dialog-content" ref={panel}>
+          <div className="story-dialog-content" ref={panel} tabIndex={-1}>
             <Story video={current} onClose={closeStory} />
           </div>
         </dialog>

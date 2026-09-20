@@ -833,6 +833,9 @@ p {
 .story-dialog-content {
   height: 100%;
 }
+.story-dialog-content:focus {
+  outline: none;
+}
 .story-panel {
   display: flex;
   flex-direction: column;
