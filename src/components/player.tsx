@@ -26,7 +26,7 @@ export function Player({
   const resumeAt = useRef(0);
   const [source, setSource] = useState<string>();
   const [playing, setPlaying] = useState(false);
-  const [muted, setMuted] = useState(true);
+  const [muted, setMuted] = useState(false);
   const [volume, setVolume] = useState(1);
   const [current, setCurrent] = useState(0);
   const [duration, setDuration] = useState(video.duration);
