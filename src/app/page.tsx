@@ -13,24 +13,17 @@ export default async function Home({
   const months = groupVideosByMonth(videos);
   return (
     <div className="home-page">
-      <div className="browse-toolbar">
-        {query ? (
-          <>
-            <span className="search-query" title={query}>
-              搜索：{query}
-            </span>
-            <Link href="/">查看全部</Link>
-          </>
-        ) : (
-          <>
-            <h1 className="timeline-title">时间线</h1>
-            <span className="timeline-order">按拍摄时间 · 最近在前</span>
-          </>
-        )}
-      </div>
+      <h1 className="sr-only">首页</h1>
+      {query && (
+        <div className="browse-toolbar">
+          <span className="search-query" title={query}>
+            搜索：{query}
+          </span>
+          <Link href="/">查看全部</Link>
+        </div>
+      )}
       {videos.length ? (
         <div className="video-timeline">
-          <p className="timeline-note">当前视频与日期均为示例</p>
           {months.map(({ month, videos }) => {
             const headingId = `month-${month ?? "unknown"}`;
             return (

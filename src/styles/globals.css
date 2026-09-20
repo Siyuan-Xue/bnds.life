@@ -234,12 +234,6 @@ p {
 .browse-toolbar a {
   color: var(--blue);
 }
-.timeline-title {
-  font-size: 20px;
-  font-weight: 600;
-}
-.timeline-order,
-.timeline-note,
 .month-heading > span {
   color: var(--secondary);
   font-size: 12px;
@@ -247,9 +241,7 @@ p {
 .video-timeline {
   max-width: 2400px;
   margin: 0 auto;
-}
-.timeline-note {
-  margin-bottom: 24px;
+  padding-top: 24px;
 }
 .timeline-month + .timeline-month {
   margin-top: 40px;
@@ -978,7 +970,6 @@ p {
   .video-card-info {
     padding: 0 12px;
   }
-  .timeline-note,
   .month-heading {
     padding: 0 12px;
   }

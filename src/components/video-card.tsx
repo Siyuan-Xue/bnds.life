@@ -32,7 +32,13 @@ export function VideoCard({
           <Heading>
             <Link href={`/watch/${video.id}`}>{video.title}</Link>
           </Heading>
-          <p>示例视频</p>
+          <p>
+            {video.recordedAt ? (
+              <time dateTime={video.recordedAt}>{video.recordedAt}</time>
+            ) : (
+              "日期待补充"
+            )}
+          </p>
         </div>
       </div>
     </article>
