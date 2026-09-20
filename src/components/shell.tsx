@@ -60,7 +60,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
         <div className="header-start">
           <button
             ref={menuButton}
-            className="icon-button"
+            className="icon-button sidebar-toggle"
             aria-label="切换侧栏"
             onClick={toggleSidebar}
             aria-expanded={overlay}

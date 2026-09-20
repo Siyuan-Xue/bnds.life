@@ -112,6 +112,12 @@ p {
   gap: 16px;
   flex-shrink: 0;
 }
+.sidebar-toggle {
+  display: none;
+}
+.watch-shell .sidebar-toggle {
+  display: inline-flex;
+}
 .brand {
   display: flex;
   align-items: center;
@@ -960,6 +966,9 @@ p {
   }
   .site-shell:not(.sidebar-overlay-open) .sidebar {
     display: none;
+  }
+  .sidebar-toggle {
+    display: inline-flex;
   }
   .masthead {
     display: flex;
