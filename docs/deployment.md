@@ -72,3 +72,11 @@ HTTPS 首页、推荐、观看页、图标、目录与空会话 API 均返回 20
 生产数据库已通过增量迁移新增 videos/video_assets；账户数据保留。新应用已完成构建和隔离验收，目前公开 current 仍为 c3c884a，真实目录等待首批视频验证后启用。媒体目录独立于 release，管理员入口 `/srv/bnds-life/bin/bnds-media`，工具链接 `/srv/bnds-life/media-tools`。
 
 已执行两次数据库备份，最近备份为 `/srv/bnds-life/backups/<BACKUP_ID>`；在独立数据库实际恢复并完成导入、页面、封面、Range 206 和隐藏/404 验收。验收服务与数据库已清理。操作方式见 [媒体说明](media-import.md)。
+
+## 首条真实视频与曝光修正（2026-09-20）
+
+15:15 首条真实视频上线，current 切换到 releases/503be7a，VIDEO_CATALOG_MODE=database，媒体 Nginx 映射启用。首条 UUID be3e040d-1424-4ab6-8503-8d25e83ab628，时长 55.564 秒；按文件名显示日期、时间标题。HTTPS、Range 206、私有目录 404 及真实画面验收通过。切换配置备份 /srv/bnds-life/backups/<BACKUP_ID>。
+
+用户发现 HDR→SDR 过曝后，已暂停队列、定位 Mobius 曲线抬高中间亮度，改用经过同帧 Apple forceSDR 对照的 Hable；15:43 首条播放版和封面重新生成并更新为内容哈希 URL，原片保持相同 SHA256。详情见 [色彩修正](hdr-color-correction.md)。
+
+当前首批三段的传输仍在继续。服务器一次性任务 bndslife-first-video-import.service 只处理 /srv/bnds-life/media/incoming/20260920-first/batch.json 中明确列出的文件，先检查完整大小和 SHA256，再转换、发布，批末备份。进度文件在同目录 processing.json。后续新增下载不属于当前清单。

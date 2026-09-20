@@ -1,4 +1,4 @@
-// Verified against the first iPhone Dolby Vision 8.4 / HLG source.
+// Hable was compared against AVFoundation forceSDR at matching timestamps.
 // Other HDR profiles stay explicit errors until representative footage is tested.
 export function hdrToneMapFilter(video) {
   const dovi = video.side_data_list?.find((item) =>
@@ -25,7 +25,7 @@ export function hdrToneMapFilter(video) {
     "zscale=t=linear:npl=100",
     "format=gbrpf32le",
     "zscale=p=bt709",
-    "tonemap=tonemap=mobius:param=0.3:desat=2:peak=10",
+    "tonemap=tonemap=hable:desat=2:peak=10",
     "zscale=t=bt709:m=bt709:r=limited:dither=error_diffusion",
     "format=yuv420p",
     "sidedata=mode=delete",

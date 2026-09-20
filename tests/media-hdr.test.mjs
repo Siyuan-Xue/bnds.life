@@ -125,6 +125,45 @@ test(
         result.assets.find((a) => a.kind === "poster").processingMethod,
         "extracted",
       );
+      // A neutral HLG midtone must not be lifted into near-white SDR.
+      // The real-phone regression was checked against AVFoundation forceSDR.
+      const gray = join(root, "hlg-neutral.mkv");
+      execFileSync("ffmpeg", [
+        "-v",
+        "error",
+        "-f",
+        "lavfi",
+        "-i",
+        "color=gray:size=160x90:rate=12",
+        "-t",
+        "0.5",
+        "-pix_fmt",
+        "yuv420p10le",
+        "-c:v",
+        "ffv1",
+        "-color_primaries",
+        "bt2020",
+        "-color_trc",
+        "arib-std-b67",
+        "-colorspace",
+        "bt2020nc",
+        gray,
+      ]);
+      const neutral = await prepareMedia({
+        root,
+        file: gray,
+        id: "00000000-0000-4000-8000-000000000010",
+      });
+      const neutralFrame = frame(
+        join(root, neutral.assets.find((a) => a.kind === "playback").objectKey),
+      );
+      const mean =
+        neutralFrame.reduce((sum, value) => sum + value, 0) /
+        neutralFrame.length;
+      assert.ok(
+        mean >= 90 && mean <= 145,
+        `HLG neutral midtone lifted too far: ${mean}/255`,
+      );
     } finally {
       await rm(root, { recursive: true, force: true });
     }

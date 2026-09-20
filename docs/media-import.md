@@ -73,7 +73,7 @@ rsync -rt --partial --progress -e ssh /本地视频目录/ <SSH_USER>@<SERVER_IP
 
 `videos`：固定 UUID、title、story、recorded_date、status、source_sha256、published_at、created_at、updated_at。`video_assets`：UUID、video_id、kind、object_key、original_filename、mime_type、size_bytes、sha256、width、height、duration_ms、processing_method、metadata、created_at。每段视频三类资源各一条。公开 DTO 只包含播放所需字段，原片名和元数据不出现在公开 API。
 
-增量迁移为 `pnpm media migrate`，只新增媒体表和索引，幂等执行，不修改账户表。新目录通过 `VIDEO_CATALOG_MODE=database` 启用；首批真实视频完成验证前，线上保留旧版演示内容。本地默认 demo，原演示目录仅用于开发测试。开发数据库模式的文件同样需要 Nginx 映射媒体目录；本地 Next.js 不提供原片或媒体写接口。
+增量迁移为 `pnpm media migrate`，只新增媒体表和索引，幂等执行，不修改账户表。生产已通过 `VIDEO_CATALOG_MODE=database` 启用真实视频目录。本地默认 demo，原演示目录仅用于开发测试。开发数据库模式的文件同样需要 Nginx 映射媒体目录；本地 Next.js 不提供原片或媒体写接口。
 
 验证命令：`pnpm test`、`pnpm test:media`、`pnpm check`、`pnpm build`。媒体测试依赖 FFmpeg/FFprobe；数据库测试创建随机 media_test_ 前缀 schema，结束后仅清理本次测试 schema 和临时文件。
 
