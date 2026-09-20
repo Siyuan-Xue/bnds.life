@@ -4,6 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "media": "node --env-file=.env scripts/media.mjs",
+    "media:backup": "node --env-file=.env scripts/backup-media.mjs",
+    "test:media": "node --env-file=.env --test tests/media-store.integration.mjs",
     "build": "next build",
     "check": "next lint && tsc --noEmit",
     "db:generate": "drizzle-kit generate",

@@ -13,6 +13,7 @@ export const env = createEnv({
         : z.string().optional(),
     BETTER_AUTH_URL: z.string().url().default("http://localhost:3000"),
     DATABASE_URL: z.string().url(),
+    VIDEO_CATALOG_MODE: z.enum(["demo", "database"]).default("demo"),
     NODE_ENV: z
       .enum(["development", "test", "production"])
       .default("development"),
@@ -35,6 +36,7 @@ export const env = createEnv({
     BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,
     BETTER_AUTH_URL: process.env.BETTER_AUTH_URL,
     DATABASE_URL: process.env.DATABASE_URL,
+    VIDEO_CATALOG_MODE: process.env.VIDEO_CATALOG_MODE,
     NODE_ENV: process.env.NODE_ENV,
   },
   /**

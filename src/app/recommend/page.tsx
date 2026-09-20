@@ -1,5 +1,5 @@
 import { Recommend } from "~/components/recommend";
-import { recommendVideos } from "~/lib/videos";
+import { recommendVideos } from "~/server/videos";
 export const metadata = { title: "推荐 · BNDS.life" };
 export default async function RecommendPage({
   searchParams,
@@ -9,7 +9,7 @@ export default async function RecommendPage({
   const params = await searchParams;
   return (
     <Recommend
-      videos={recommendVideos(
+      videos={await recommendVideos(
         typeof params.v === "string" ? params.v : undefined,
       )}
     />

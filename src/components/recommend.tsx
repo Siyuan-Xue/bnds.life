@@ -147,7 +147,9 @@ export function Recommend({ videos }: { videos: Video[] }) {
                 )}
                 <div className="feed-caption">
                   <p>
-                    <span className="feed-sample">占位预览</span>
+                    {video.isDemo && (
+                      <span className="feed-sample">占位预览</span>
+                    )}
                   </p>
                   <Link href={`/watch/${video.id}`}>{video.title}</Link>
                 </div>

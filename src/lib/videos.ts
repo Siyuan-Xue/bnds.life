@@ -6,6 +6,7 @@ export type Video = {
   poster: string;
   story?: string;
   recordedAt?: string;
+  isDemo?: boolean;
 };
 
 const titles = [
@@ -57,6 +58,7 @@ const recordedDates = [
 ];
 
 const videos: Video[] = titles.map((title, index) => ({
+  isDemo: true,
   id: `memory-${String(index + 1).padStart(2, "0")}`,
   title,
   duration: 20,

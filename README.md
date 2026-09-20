@@ -19,7 +19,7 @@ pnpm dev
 
 `start-database.sh` 负责启动本地 PostgreSQL；初次使用默认密码时会提示生成随机密码并更新 `.env`。重复运行会复用现有容器。`db:push` 同步表结构，不负责启动数据库。
 
-`.env` 不提交 Git。生产环境应设置独立的数据库连接、足够长的 `BETTER_AUTH_SECRET` 与实际站点的 `BETTER_AUTH_URL`。本地数据库与未来生产数据库互相独立。数据库当前只有 `user`、`session`、`account`、`verification` 四张账户基础表。
+`.env` 不提交 Git。生产环境应设置独立的数据库连接、足够长的 `BETTER_AUTH_SECRET` 与实际站点的 `BETTER_AUTH_URL`。本地数据库与生产数据库互相独立。数据库包含四张账户基础表，以及 `videos`、`video_assets` 媒体目录表。
 
 ## 当前页面
 
@@ -27,14 +27,15 @@ pnpm dev
 - `/watch/[id]`：视频播放器、全屏/音量/进度、同一行的标题与日期、只读故事。
 - `/recommend`：相同视频目录的连续播放；上下滚动、键盘方向键和桌面按钮切换；仅当前项播放。
 
-侧栏只有「首页」与「推荐」。首页按拍摄月份倒序展示；推荐页电脑故事侧排并与视频等高，手机版故事贴底居中覆盖。公共导航与推荐页共用宽高比 1:1 分界。现有视频、标题和日期为示例；媒体文件由本地 ffmpeg 生成，不含真实人物或校园素材。
+侧栏只有「首页」与「推荐」。首页按拍摄月份倒序展示；推荐页电脑故事侧排并与视频等高，手机版故事贴底居中覆盖。公共导航与推荐页共用宽高比 1:1 分界。开发默认演示目录，示例素材不含真实人物或校园内容；生产使用数据库目录，尚未导入真实素材时显示空状态。
 
-页面不提供登录入口、上传者头像或评论。保留 Better Auth 和账户表，但没有开放密码登录、注册或任何 OAuth 提供商。故事目前是只读正文。上传、真实媒体存储、个性化推荐和照片/文本内容留待后续需求确定。
+页面不提供登录入口、上传者头像、评论或上传功能。保留 Better Auth 和账户表，但没有开放密码登录、注册或任何 OAuth 提供商。故事是只读正文。真实视频由站长通过 SSH/SCP/rsync 传入服务器，再由离线工具提取封面、按需处理播放文件并入库，见 [媒体导入说明](docs/media-import.md)。
 
 ## 检查
 
 ```sh
 pnpm test
+pnpm test:media # 需要 FFmpeg/FFprobe 和本地 PostgreSQL；创建临时测试 schema
 pnpm check
 pnpm build
 pnpm start
@@ -44,10 +45,12 @@ pnpm start
 
 ## 文件入口
 
-- `src/lib/videos.ts`：唯一的占位视频目录及排序、查找函数。
+- `src/lib/videos.ts`：公共 Video 类型与开发用演示目录。
+- `src/server/videos.ts`：正式只读视频目录，三个页面共用。
+- `scripts/media.mjs`：仅通过命令行调用的媒体导入与维护工具。
 - `src/components/`：外壳、侧栏、播放器、观看页、推荐页和故事组件。
 - `src/server/api/routers/video.ts`：公开的 tRPC 目录接口。
-- `src/server/db/schema.ts`：Drizzle 账户表。
+- `src/server/db/schema.ts`：Drizzle 账户表与媒体目录表。
 
 界面以用户提供截图和本次实际访问的 YouTube 页面为参考；YouTube 的地区/账户实验版本可能不同。本次没有复制 YouTube 品牌、广告、订阅、会员或混剪功能。
 

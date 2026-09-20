@@ -143,7 +143,7 @@ export function Player({
         playsInline
         loop={feed}
         preload={active ? "auto" : "none"}
-        aria-label={`${video.title}，占位视频`}
+        aria-label={video.isDemo ? `${video.title}，占位视频` : video.title}
         onClick={toggle}
         onDoubleClick={fullscreen}
         onPlay={() => setPlaying(true)}

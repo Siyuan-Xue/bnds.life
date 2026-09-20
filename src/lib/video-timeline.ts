@@ -1,12 +1,11 @@
 import type { Video } from "./videos";
+import { normalizeRecordedDate } from "./recorded-date.ts";
 
 export type VideoMonth = { month: string | null; videos: Video[] };
 
 function validRecordedDate(value: string | undefined): string | undefined {
-  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return undefined;
-  const date = new Date(value);
-  if (!Number.isFinite(date.getTime())) return undefined;
-  return date.toISOString().slice(0, 10) === value ? value : undefined;
+  const date = normalizeRecordedDate(value);
+  return date && date.length >= 7 ? date : undefined;
 }
 
 export function groupVideosByMonth(videos: Video[]): VideoMonth[] {

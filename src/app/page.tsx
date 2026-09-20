@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { VideoCard } from "~/components/video-card";
-import { listVideos } from "~/lib/videos";
+import { listVideos } from "~/server/videos";
 import { groupVideosByMonth } from "~/lib/video-timeline";
 export default async function Home({
   searchParams,
@@ -9,7 +9,7 @@ export default async function Home({
 }) {
   const params = await searchParams;
   const query = typeof params.q === "string" ? params.q.slice(0, 200) : "";
-  const videos = listVideos(query);
+  const videos = await listVideos(query);
   const months = groupVideosByMonth(videos);
   return (
     <div className="home-page">
@@ -55,9 +55,13 @@ export default async function Home({
         </div>
       ) : (
         <div className="empty-state">
-          <h1>没有找到相关视频</h1>
-          <p>试试其他关键词。</p>
-          <Link href="/">返回首页</Link>
+          <h1>{query ? "没有找到相关视频" : "暂时没有视频"}</h1>
+          {query && (
+            <>
+              <p>试试其他关键词。</p>
+              <Link href="/">返回首页</Link>
+            </>
+          )}
         </div>
       )}
     </div>

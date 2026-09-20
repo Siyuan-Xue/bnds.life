@@ -1,5 +1,75 @@
 import { relations } from "drizzle-orm";
-import { boolean, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import {
+  boolean,
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+  integer,
+  bigint,
+  jsonb,
+  index,
+  uniqueIndex,
+  check,
+} from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+
+export const mediaVideos = pgTable(
+  "videos",
+  {
+    id: uuid("id").primaryKey(),
+    title: text("title").notNull(),
+    story: text("story"),
+    recordedDate: text("recorded_date"),
+    status: text("status").notNull().default("draft"),
+    sourceSha256: text("source_sha256").notNull().unique(),
+    publishedAt: timestamp("published_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index("videos_browse_idx").on(t.status, t.recordedDate),
+    check(
+      "videos_status_check",
+      sql`${t.status} IN ('draft', 'published', 'hidden')`,
+    ),
+  ],
+);
+
+export const videoAssets = pgTable(
+  "video_assets",
+  {
+    id: uuid("id").primaryKey(),
+    videoId: uuid("video_id")
+      .notNull()
+      .references(() => mediaVideos.id, { onDelete: "cascade" }),
+    kind: text("kind").notNull(),
+    objectKey: text("object_key").notNull(),
+    originalFilename: text("original_filename"),
+    mimeType: text("mime_type").notNull(),
+    sizeBytes: bigint("size_bytes", { mode: "number" }).notNull(),
+    sha256: text("sha256").notNull(),
+    width: integer("width"),
+    height: integer("height"),
+    durationMs: bigint("duration_ms", { mode: "number" }),
+    processingMethod: text("processing_method").notNull(),
+    metadata: jsonb("metadata"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("video_assets_kind_idx").on(t.videoId, t.kind),
+    check(
+      "video_assets_kind_check",
+      sql`${t.kind} IN ('original', 'playback', 'poster')`,
+    ),
+  ],
+);
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),

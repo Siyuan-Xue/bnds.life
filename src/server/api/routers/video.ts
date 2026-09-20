@@ -1,6 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { findVideo, listVideos, recommendVideos } from "~/lib/videos";
+import { findVideo, listVideos, recommendVideos } from "~/server/videos";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 
 export const videoRouter = createTRPCRouter({
@@ -9,8 +9,8 @@ export const videoRouter = createTRPCRouter({
     .query(({ input }) => listVideos(input?.query)),
   byId: publicProcedure
     .input(z.object({ id: z.string().max(100) }))
-    .query(({ input }) => {
-      const video = findVideo(input.id);
+    .query(async ({ input }) => {
+      const video = await findVideo(input.id);
       if (!video)
         throw new TRPCError({ code: "NOT_FOUND", message: "未找到这段视频" });
       return video;

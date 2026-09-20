@@ -24,7 +24,7 @@ export function VideoCard({
           height={720}
           unoptimized
         />
-        <span className="preview-badge">占位预览</span>
+        {video.isDemo && <span className="preview-badge">占位预览</span>}
         <span className="duration">{formatDuration(video.duration)}</span>
       </Link>
       <div className="video-card-info">
