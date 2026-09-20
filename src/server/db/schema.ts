@@ -66,7 +66,7 @@ export const videoAssets = pgTable(
     uniqueIndex("video_assets_kind_idx").on(t.videoId, t.kind),
     check(
       "video_assets_kind_check",
-      sql`${t.kind} IN ('original', 'playback', 'poster')`,
+      sql`${t.kind} IN ('original', 'playback', 'poster', 'native')`,
     ),
   ],
 );

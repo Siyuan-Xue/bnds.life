@@ -5,6 +5,7 @@ import { formatDuration, type Video } from "~/lib/videos";
 import { Icon } from "./icon";
 import { isPlaybackShortcut } from "~/lib/shortcuts";
 import { videoAspectRatio } from "~/lib/video-layout";
+import { preferredSource, fallbackSource } from "~/lib/playback-source";
 
 export function Player({
   video,
@@ -22,6 +23,8 @@ export function Player({
   const media = useRef<HTMLVideoElement>(null);
   const container = useRef<HTMLDivElement>(null);
   const userPaused = useRef(false);
+  const resumeAt = useRef(0);
+  const [source, setSource] = useState<string>();
   const [playing, setPlaying] = useState(false);
   const [muted, setMuted] = useState(true);
   const [volume, setVolume] = useState(1);
@@ -29,6 +32,29 @@ export function Player({
   const [duration, setDuration] = useState(video.duration);
   const [error, setError] = useState(false);
   const [full, setFull] = useState(false);
+  const fallbackUrl = video.source;
+  const nativeUrl = video.nativeSource?.url;
+  const nativeType = video.nativeSource?.contentType;
+
+  useEffect(() => {
+    const element = media.current;
+    if (!element) return;
+    setSource(
+      preferredSource(
+        {
+          source: fallbackUrl,
+          nativeSource:
+            nativeUrl && nativeType
+              ? { url: nativeUrl, contentType: nativeType }
+              : undefined,
+        },
+        (type) => element.canPlayType(type),
+      ),
+    );
+    setError(false);
+    setCurrent(0);
+    resumeAt.current = 0;
+  }, [fallbackUrl, nativeUrl, nativeType]);
 
   useEffect(() => {
     const element = media.current;
@@ -76,6 +102,9 @@ export function Player({
     } else element?.pause();
     return () => element?.pause();
   }, [active, play, video.id]);
+  useEffect(() => {
+    if (source && active && !document.hidden && !userPaused.current) play();
+  }, [source, active, play]);
   useEffect(() => {
     const visibility = () => {
       if (document.hidden) media.current?.pause();
@@ -137,7 +166,7 @@ export function Player({
     >
       <video
         ref={media}
-        src={video.source}
+        src={source}
         poster={video.poster}
         muted={muted}
         playsInline
@@ -154,7 +183,23 @@ export function Player({
           setMuted(event.currentTarget.muted);
           setVolume(event.currentTarget.volume);
         }}
-        onError={() => setError(true)}
+        onLoadedMetadata={(event) => {
+          if (resumeAt.current > 0) {
+            event.currentTarget.currentTime = Math.min(
+              resumeAt.current,
+              event.currentTarget.duration,
+            );
+            resumeAt.current = 0;
+          }
+        }}
+        onError={(event) => {
+          const fallback = fallbackSource(video, source);
+          if (fallback) {
+            resumeAt.current = event.currentTarget.currentTime || current;
+            setError(false);
+            setSource(fallback);
+          } else setError(true);
+        }}
       />
       {feed && <div className="feed-scrim" aria-hidden="true" />}
       {error ? (

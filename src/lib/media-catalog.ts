@@ -8,7 +8,12 @@ type CatalogRow = {
   recordedDate: string | null;
   status: string;
 };
-type AssetRow = { kind: string; objectKey: string; durationMs?: number | null };
+type AssetRow = {
+  kind: string;
+  objectKey: string;
+  durationMs?: number | null;
+  metadata?: unknown;
+};
 
 export function publicVideo(
   row: CatalogRow,
@@ -31,11 +36,28 @@ export function publicVideo(
   )
     return undefined;
   const recordedAt = normalizeRecordedDate(row.recordedDate);
+  const native = assets.find((a) => a.kind === "native");
+  const contentType =
+    native?.metadata &&
+    typeof native.metadata === "object" &&
+    "contentType" in native.metadata
+      ? native.metadata.contentType
+      : undefined;
+  const nativeSource =
+    native &&
+    safe(native.objectKey, "playback/") &&
+    typeof contentType === "string" &&
+    /^video\/mp4; codecs="(?:hvc1(?:\.[A-C]?\d+\.[A-F0-9]+\.[LH]\d+(?:\.[A-F0-9]{1,2}){1,6})?|avc1(?:\.[A-F0-9]{6})?)(?:, mp4a\.40\.2)?"$/.test(
+      contentType,
+    )
+      ? { url: `/media/${native.objectKey}`, contentType }
+      : undefined;
   return {
     id: row.id,
     title: row.title,
     duration: playback.durationMs / 1000,
     source: `/media/${playback.objectKey}`,
+    ...(nativeSource ? { nativeSource } : {}),
     poster: `/media/${poster.objectKey}`,
     ...(row.story ? { story: row.story } : {}),
     ...(recordedAt ? { recordedAt } : {}),

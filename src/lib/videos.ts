@@ -3,6 +3,7 @@ export type Video = {
   title: string;
   duration: number;
   source: string;
+  nativeSource?: { url: string; contentType: string };
   poster: string;
   story?: string;
   recordedAt?: string;

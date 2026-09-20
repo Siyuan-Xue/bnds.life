@@ -24,6 +24,7 @@ export async function listVideos(query = ""): Promise<Video[]> {
       kind: videoAssets.kind,
       objectKey: videoAssets.objectKey,
       durationMs: videoAssets.durationMs,
+      metadata: videoAssets.metadata,
     })
     .from(videoAssets)
     .where(

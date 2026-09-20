@@ -5,7 +5,13 @@ import { dirname, resolve } from "node:path";
 import { execFileSync } from "node:child_process";
 import postgres from "postgres";
 import { initializeRoot } from "./media/files.mjs";
-import { migrate, importVideo, setStatus, editVideo } from "./media/store.mjs";
+import {
+  migrate,
+  importVideo,
+  setStatus,
+  editVideo,
+  addNativePlayback,
+} from "./media/store.mjs";
 
 const { values, positionals } = parseArgs({
   allowPositionals: true,
@@ -31,6 +37,7 @@ if (values.help || !command) {
   pnpm media import --file /path/video.mp4 [--title 标题] [--date 2021-06-03] [--story-file story.txt] [--poster cover.jpg] [--publish] [--consume]
   pnpm media batch --manifest /path/batch.json [--publish] [--consume]
   pnpm media list
+  pnpm media native [UUID]  为已导入视频补充无损原画源；省略 UUID 时检查全部
   pnpm media edit UUID [--title 标题] [--date 日期或空字符串] [--story-file story.txt]
   pnpm media publish UUID
   pnpm media hide UUID
@@ -79,6 +86,12 @@ try {
         2,
       ),
     );
+  } else if (command === "native") {
+    const rows = id
+      ? [{ id }]
+      : await sql`SELECT id FROM videos ORDER BY created_at`;
+    for (const row of rows)
+      console.log(JSON.stringify(await addNativePlayback(sql, root, row.id)));
   } else if (command === "import" || command === "edit") {
     const story =
       values["story-file"] !== undefined

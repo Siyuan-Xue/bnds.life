@@ -84,3 +84,17 @@ rsync -rt --partial --progress -e ssh /本地视频目录/ <SSH_USER>@<SERVER_IP
 管理员入口为 `/srv/bnds-life/bin/bnds-media`，通过独立的 `media-tools` 链接运行，和网页 `current` 发布链接分开。完整原片始终保留，本地输入不删除。
 
 HDR 转换依据：[FFmpeg tonemap](https://ffmpeg.org/ffmpeg-filters.html#tonemap)、[Dolby Vision 8.4 的 HLG 基础层](https://professionalsupport.dolby.com/s/article/Transcoding-Dolby-Vision-profile-8-4-to-HLG-on-Android)。使用 BT.709 SDR 播放版，不将其宣称为保留 Dolby Vision 动态显示映射的 HDR 播放。
+
+## 原画优先播放（2026-09-20）
+
+用户已确认切换为原画优先。新导入的 HEVC/H.264 视频（AAC-LC 或无音轨）在需要兼容转码时，同时生成 `native` 资源：只复制音视频比特流到 faststart MP4，保留分辨率、帧率、HDR/Dolby Vision 和旋转信息；音视频流 SHA256 必须与原片一致。原本已满足无损播放条件的 H.264 继续直接使用 remux/reuse，不重复生成原画副本。
+
+原画源放在既有公开 `playback/<UUID>/` 目录，私有 `originals` 不开放。MP4 只含第一视频和音频流，去除相机位置、备注及其他元数据轨道。网页只接收原画 URL 和从解码配置解析出的完整 RFC 6381 编码标识；归档元数据不进入 API。
+
+播放器先用 `canPlayType` 检查该文件编码：支持则优先原画，否则用现有 H.264/SDR 兼容源。原画加载/解码出错时只回退一次，保留播放位置、静音与暂停意图；普通缓冲不触发降级。不会改变观看页和推荐页的布局，也不会强制将 HDR 转为 SDR。最终 HDR 显示仍由浏览器、系统和显示设备决定。
+
+增量迁移 `002-native-playback.sql` 只扩展资源类型约束。旧条目可运行 `/srv/bnds-life/bin/bnds-media native [UUID]` 补建原画源；省略 UUID 检查全部，重复执行跳过已有源，标题、日期、故事、兼容源和发布状态不变。先备份，等待正在进行的导入释放媒体锁，再运行 `migrate` 和 `native`。
+
+原画播放保留原码率，不保证降低网络带宽需求。原画与兼容资源均保留，之后可按实际设备与网络数据决定储存策略。
+
+验收：真实 HEVC/HLG 样片在浏览器以原画 MP4 解码为 1920×1080，方向正确；临时测试页模拟原画 404 后自动转用兼容源并继续播放，模拟编码不支持时直接选择兼容源。测试页和样片不随发布部署。单元测试核对封装前后音视频比特流哈希、HLG 标记、旋转、元数据清理和完整编码字符串，数据库集成测试在独立 schema 内验证迁移幂等和原画补建。

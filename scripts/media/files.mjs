@@ -19,6 +19,7 @@ import { basename, extname, join, resolve, sep } from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { hdrToneMapFilter } from "./color.mjs";
+import { mp4VideoCodec } from "./codec.mjs";
 
 const execute = promisify(execFile);
 export const uuidPattern =
@@ -88,6 +89,123 @@ async function ffmpeg(args) {
     ],
     { maxBuffer: 1024 ** 2, timeout: 2 * 60 * 60 * 1000 },
   );
+}
+
+// Copy the encoded streams, including HDR and rotation, into a seekable MP4.
+// Archive-only tracks and camera/location tags are not exposed to the website.
+export async function createNativePlayback({ file, output, info }) {
+  info ??= await probeMedia(file);
+  if (
+    !["hevc", "h264"].includes(info.video.codec_name) ||
+    (info.audio &&
+      (info.audio.codec_name !== "aac" || info.audio.profile !== "LC"))
+  )
+    return null;
+  await ffmpeg([
+    "-i",
+    file,
+    "-map",
+    "0:v:0",
+    "-map",
+    "0:a:0?",
+    "-map_metadata",
+    "-1",
+    "-map_metadata:s",
+    "-1",
+    "-map_chapters",
+    "-1",
+    "-c",
+    "copy",
+    ...(info.video.codec_name === "hevc" ? ["-tag:v", "hvc1"] : []),
+    "-strict",
+    "unofficial",
+    "-movflags",
+    "+faststart",
+    output,
+  ]);
+  const copied = await probeMedia(output);
+  for (const key of [
+    "codec_name",
+    "width",
+    "height",
+    "pix_fmt",
+    "color_transfer",
+    "color_primaries",
+    "color_space",
+  ]) {
+    if (info.video[key] !== copied.video[key])
+      throw new Error(`原画封装改变了 ${key}`);
+  }
+  const essentialSideData = (video) =>
+    (video.side_data_list ?? [])
+      .filter(
+        (s) => s.rotation !== undefined || /DOVI/i.test(s.side_data_type ?? ""),
+      )
+      .sort((a, b) => a.side_data_type.localeCompare(b.side_data_type));
+  if (
+    JSON.stringify(essentialSideData(info.video)) !==
+    JSON.stringify(essentialSideData(copied.video))
+  )
+    throw new Error("原画封装未完整保留 HDR 或旋转信息");
+  const streamHash = async (path) =>
+    (
+      await execute(
+        "ffmpeg",
+        [
+          "-v",
+          "error",
+          "-nostdin",
+          "-i",
+          path,
+          "-map",
+          "0:v:0",
+          "-map",
+          "0:a:0?",
+          "-c",
+          "copy",
+          "-f",
+          "streamhash",
+          "-hash",
+          "sha256",
+          "-",
+        ],
+        { maxBuffer: 1024 ** 2, timeout: 10 * 60 * 1000 },
+      )
+    ).stdout;
+  if ((await streamHash(file)) !== (await streamHash(output)))
+    throw new Error("原画封装音视频比特流校验不一致");
+  const { stdout } = await execute(
+    "ffprobe",
+    [
+      "-v",
+      "error",
+      "-select_streams",
+      "v:0",
+      "-show_entries",
+      "stream=extradata",
+      "-show_data",
+      "-of",
+      "json",
+      output,
+    ],
+    { maxBuffer: 1024 ** 2, timeout: 60000 },
+  );
+  const dump = JSON.parse(stdout).streams[0]?.extradata ?? "";
+  const bytes = Buffer.from(
+    dump
+      .split("\n")
+      .filter((line) => line.includes(":"))
+      .map((line) =>
+        line.split(":")[1].trimStart().split("  ")[0].replaceAll(" ", ""),
+      )
+      .join(""),
+    "hex",
+  );
+  const codec = mp4VideoCodec(info.video.codec_name, bytes);
+  return {
+    info: copied,
+    contentType: `video/mp4; codecs="${codec}${info.audio ? ", mp4a.40.2" : ""}"`,
+  };
 }
 
 export async function prepareMedia({ file, root, id, poster }) {
@@ -228,6 +346,14 @@ export async function prepareMedia({ file, root, id, poster }) {
       }
     }
     const played = await probeMedia(playback);
+    const nativePath = join(work, "playback", "native.mp4");
+    const native = compatible
+      ? null
+      : await createNativePlayback({
+          file: original,
+          output: nativePath,
+          info,
+        });
     let cover = join(work, "posters", "cover.jpg");
     let coverMethod = poster ? "custom" : "extracted";
     const warnings = [];
@@ -279,6 +405,9 @@ export async function prepareMedia({ file, root, id, poster }) {
         info,
       ],
       ["playback", playback, "video/mp4", method, played],
+      ...(native
+        ? [["native", nativePath, "video/mp4", "stream-copy", native.info]]
+        : []),
       [
         "poster",
         cover,
@@ -305,7 +434,12 @@ export async function prepareMedia({ file, root, id, poster }) {
         height: probe?.video.height ?? null,
         durationMs: probe ? Math.round(probe.duration * 1000) : null,
         processingMethod,
-        metadata: kind === "original" ? info.metadata : null,
+        metadata:
+          kind === "original"
+            ? info.metadata
+            : kind === "native"
+              ? { contentType: native.contentType }
+              : null,
       });
     }
     for (const folder of ["originals", "playback", "posters"]) {

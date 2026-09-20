@@ -5,12 +5,14 @@ import { randomUUID } from "node:crypto";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
+import { execFileSync } from "node:child_process";
 import {
   migrate,
   importVideo,
   setStatus,
   editVideo,
   withMediaLock,
+  addNativePlayback,
 } from "../scripts/media/store.mjs";
 
 test("隔离数据库：迁移幂等、重复导入保留编辑、显式发布隐藏与缺失资源拒绝发布", async () => {
@@ -96,6 +98,56 @@ test("隔离数据库：迁移幂等、重复导入保留编辑、显式发布�
     await rm(join(root, playback.object_key));
     await assert.rejects(setStatus(sql, root, first.id, "published"));
     assert.equal((await sql`SELECT status FROM videos`)[0].status, "hidden");
+    const hevc = join(root, "native-camera.mov");
+    execFileSync("ffmpeg", [
+      "-v",
+      "error",
+      "-f",
+      "lavfi",
+      "-i",
+      "testsrc2=size=160x90:rate=12",
+      "-t",
+      "0.5",
+      "-c:v",
+      "libx265",
+      "-x265-params",
+      "pools=1:frame-threads=1:log-level=error",
+      hevc,
+    ]);
+    const second = await importVideo(sql, {
+      root,
+      file: hevc,
+      title: "原画",
+      recordedAt: "2023-07-18",
+    });
+    assert.equal(
+      Number(
+        (
+          await sql`SELECT count(*) FROM video_assets WHERE video_id=${second.id}`
+        )[0].count,
+      ),
+      4,
+    );
+    await setStatus(sql, root, second.id, "published");
+    await sql`DELETE FROM video_assets WHERE video_id=${second.id} AND kind='native'`;
+    assert.ok((await addNativePlayback(sql, root, second.id)).native);
+    assert.equal(
+      (await addNativePlayback(sql, root, second.id)).skipped,
+      "already-present",
+    );
+    assert.equal(
+      Number(
+        (
+          await sql`SELECT count(*) FROM video_assets WHERE video_id=${second.id}`
+        )[0].count,
+      ),
+      4,
+    );
+    assert.equal(
+      (await sql`SELECT status FROM videos WHERE id=${second.id}`)[0].status,
+      "published",
+    );
+    await migrate(sql);
   } finally {
     await sql.end();
     await admin.unsafe(`DROP SCHEMA ${schema} CASCADE`);

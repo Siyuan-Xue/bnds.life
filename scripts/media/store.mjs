@@ -1,8 +1,23 @@
 import { randomUUID } from "node:crypto";
-import { readFile, realpath, unlink } from "node:fs/promises";
-import { basename, resolve, sep } from "node:path";
+import {
+  readFile,
+  realpath,
+  unlink,
+  mkdtemp,
+  rename,
+  chmod,
+  stat,
+  rm,
+} from "node:fs/promises";
+import { basename, resolve, sep, join } from "node:path";
 import { normalizeRecordedDate } from "../../src/lib/recorded-date.ts";
-import { hashFile, prepareMedia, verifyAsset, uuidPattern } from "./files.mjs";
+import {
+  hashFile,
+  prepareMedia,
+  verifyAsset,
+  uuidPattern,
+  createNativePlayback,
+} from "./files.mjs";
 
 async function transaction(conn, operation) {
   await conn.unsafe("BEGIN");
@@ -34,10 +49,16 @@ export async function withMediaLock(sql, operation) {
   }
 }
 export async function migrate(sql) {
-  const migration = await readFile(
-    new URL("../../ops/migrations/001-media.sql", import.meta.url),
-    "utf8",
-  );
+  const migration = (
+    await Promise.all(
+      ["001-media.sql", "002-native-playback.sql"].map((name) =>
+        readFile(
+          new URL(`../../ops/migrations/${name}`, import.meta.url),
+          "utf8",
+        ),
+      ),
+    )
+  ).join("\n");
   await withMediaLock(sql, (conn) =>
     transaction(conn, (tx) => tx.unsafe(migration)),
   );
@@ -129,11 +150,50 @@ export async function setStatus(sql, root, id, status) {
     if (status === "published") {
       const assets =
         await conn`SELECT * FROM video_assets WHERE video_id=${id}`;
-      if (assets.length !== 3) throw new Error("媒体资源尚未齐全，不能发布");
+      if (
+        !["original", "playback", "poster"].every((kind) =>
+          assets.some((a) => a.kind === kind),
+        )
+      )
+        throw new Error("媒体资源尚未齐全，不能发布");
       for (const asset of assets) await verifyAsset(root, asset);
     }
     await conn`UPDATE videos SET status=${status},published_at=CASE WHEN ${status}='published' THEN COALESCE(published_at,now()) ELSE published_at END,updated_at=now() WHERE id=${id}`;
     return { id, status };
+  });
+}
+
+// Backfill existing videos without changing their titles, dates, publication or fallback.
+export async function addNativePlayback(sql, root, id) {
+  if (!uuidPattern.test(id)) throw new Error("无效的视频 ID");
+  return withMediaLock(sql, async (conn) => {
+    const assets = await conn`SELECT * FROM video_assets WHERE video_id=${id}`;
+    if (assets.some((a) => a.kind === "native"))
+      return { id, skipped: "already-present" };
+    const original = assets.find((a) => a.kind === "original");
+    const fallback = assets.find((a) => a.kind === "playback");
+    if (!original || !fallback) throw new Error("缺少原片或兼容播放资源");
+    if (["reuse", "remux"].includes(fallback.processing_method))
+      return { id, skipped: "already-lossless" };
+    await verifyAsset(root, original);
+    const file = resolve(root, original.object_key);
+    if ((await hashFile(file)) !== original.sha256)
+      throw new Error("原片校验不一致");
+    const work = await mkdtemp(join(root, ".work", `${id}-native-`));
+    try {
+      const output = join(work, "native.mp4");
+      const result = await createNativePlayback({ file, output });
+      if (!result) return { id, skipped: "unsupported-codec" };
+      const sha256 = await hashFile(output);
+      const objectKey = `playback/${id}/native-${sha256}.mp4`;
+      await chmod(output, 0o644);
+      const size = (await stat(output)).size;
+      await rename(output, join(root, objectKey));
+      await conn`INSERT INTO video_assets ${conn({ id: randomUUID(), video_id: id, kind: "native", object_key: objectKey, original_filename: null, mime_type: "video/mp4", size_bytes: size, sha256, width: result.info.video.width, height: result.info.video.height, duration_ms: Math.round(result.info.duration * 1000), processing_method: "stream-copy", metadata: conn.json({ contentType: result.contentType }) })}`;
+      return { id, native: objectKey };
+    } finally {
+      await rm(work, { recursive: true, force: true });
+    }
   });
 }
 export async function editVideo(sql, id, options) {
