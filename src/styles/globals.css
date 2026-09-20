@@ -99,24 +99,17 @@ p {
 .brand {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 8px;
   white-space: nowrap;
   font-size: 22px;
   font-weight: 800;
   letter-spacing: -1px;
 }
 .brand-mark {
-  display: grid;
-  place-items: center;
-  width: 29px;
-  height: 21px;
-  border-radius: 6px;
-  background: #f03;
-  color: white;
-  font-size: 17px;
-  font-weight: 900;
-  line-height: 1;
-  letter-spacing: -1px;
+  display: block;
+  width: 54px;
+  height: 29px;
+  flex-shrink: 0;
 }
 .search-form {
   display: flex;
@@ -1139,7 +1132,12 @@ p {
     gap: 12px;
   }
   .brand {
-    font-size: 21px;
+    font-size: 20px;
+    gap: 5px;
+  }
+  .brand-mark {
+    width: 44px;
+    height: 24px;
   }
   .header-end {
     min-width: 0;
@@ -1264,6 +1262,24 @@ p {
     top: 12px;
     left: 12px;
     right: 12px;
+  }
+}
+@media (max-width: 380px) {
+  .brand {
+    font-size: 18px;
+    gap: 4px;
+  }
+  .brand-mark {
+    width: 40px;
+    height: 22px;
+  }
+  .masthead,
+  .header-start {
+    gap: 4px;
+  }
+  .sign-in {
+    padding: 0 8px;
+    font-size: 13px;
   }
 }
 @media (prefers-reduced-motion: reduce) {

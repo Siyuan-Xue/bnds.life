@@ -1,6 +1,6 @@
 import { Recommend } from "~/components/recommend";
 import { recommendVideos } from "~/lib/videos";
-export const metadata = { title: "推荐 · bnds life" };
+export const metadata = { title: "推荐 · BNDS.life" };
 export default async function RecommendPage({
   searchParams,
 }: {

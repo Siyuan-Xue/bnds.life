@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { Icon } from "./icon";
+import { BrandLogo } from "./brand-logo";
 
 const AccountContext = createContext<() => void>(() => undefined);
 export const useAccountDialog = () => useContext(AccountContext);
@@ -69,12 +70,10 @@ export function Shell({ children }: { children: React.ReactNode }) {
             <Link
               className="brand"
               href="/"
-              aria-label="bnds life · 十一小日子 首页"
+              aria-label="BNDS.life · 十一小日子 首页"
             >
-              <span className="brand-mark" aria-hidden="true">
-                11
-              </span>
-              <span>bnds life</span>
+              <BrandLogo />
+              <span>BNDS.life</span>
             </Link>
           </div>
           <form action="/" className="search-form" role="search">
@@ -158,7 +157,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
           }}
         >
           <div className="dialog-heading">
-            <h2 id="account-title">登录 bnds life</h2>
+            <h2 id="account-title">登录 BNDS.life</h2>
             <button
               className="icon-button"
               aria-label="关闭登录窗口"

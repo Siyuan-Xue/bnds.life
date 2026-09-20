@@ -12,7 +12,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const video = findVideo((await params).id);
   return {
-    title: video ? `${video.title} · bnds life` : "未找到视频 · bnds life",
+    title: video ? `${video.title} · BNDS.life` : "未找到视频 · BNDS.life",
   };
 }
 export default async function WatchPage({

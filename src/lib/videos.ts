@@ -27,7 +27,7 @@ const titles = [
 const videos: Video[] = titles.map((title, index) => ({
   id: `memory-${String(index + 1).padStart(2, "0")}`,
   title,
-  author: "bnds life",
+  author: "BNDS.life",
   duration: 20,
   source: `/media/placeholder-${index % 3 === 1 ? "portrait" : "landscape"}.mp4`,
   poster: `/media/poster-${index + 1}.svg`,

@@ -1,4 +1,4 @@
-# bnds life · 十一小日子
+# BNDS.life · 十一小日子
 
 公开浏览校园影像的中文网站。基于现有 Create T3 App 项目，保留 Next.js App Router、TypeScript、Tailwind CSS、tRPC、Better Auth、Drizzle 和 PostgreSQL。
 

@@ -4,7 +4,7 @@ import { listVideos, findVideo, recommendVideos } from '../src/lib/videos.ts';
 
 test('搜索去掉首尾空格，中文标题和英文品牌都可匹配', () => {
   assert.equal(listVideos('   操场   ').length, 2);
-  assert.equal(listVideos('BNDS LIFE').length, 12);
+  assert.equal(listVideos('bnds.LIFE').length, 12);
   assert.equal(listVideos('不存在的内容').length, 0);
 });
 test('未知视频不误播放第一条', () => {
