@@ -18,6 +18,7 @@ import { createHash } from "node:crypto";
 import { basename, extname, join, resolve, sep } from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
+import { hdrToneMapFilter } from "./color.mjs";
 
 const execute = promisify(execFile);
 export const uuidPattern =
@@ -124,13 +125,7 @@ export async function prepareMedia({ file, root, id, poster }) {
       throw new Error("上传文件仍在变化，请等待传输完成后重试");
     const info = await probeMedia(original);
     const v = info.video;
-    if (
-      ["smpte2084", "arib-std-b67"].includes(v.color_transfer) ||
-      v.side_data_list?.some((d) => /DOVI/i.test(d.side_data_type ?? ""))
-    )
-      throw new Error(
-        "检测到 HDR/Dolby Vision，需确认色彩转换后单独处理；原文件未修改",
-      );
+    const toneMap = hdrToneMapFilter(v);
     const rotation = Number(
       v.side_data_list?.find((d) => d.rotation !== undefined)?.rotation ??
         v.tags?.rotate ??
@@ -144,6 +139,7 @@ export async function prepareMedia({ file, root, id, poster }) {
       Number(info.metadata.format?.bit_rate) ||
       (input.size * 8) / info.duration;
     const compatible =
+      !toneMap &&
       v.codec_name === "h264" &&
       v.pix_fmt === "yuv420p" &&
       (!info.audio || info.audio.codec_name === "aac") &&
@@ -189,7 +185,21 @@ export async function prepareMedia({ file, root, id, poster }) {
         await ffmpeg([
           ...common,
           "-vf",
-          scale + (fps > 60 ? ",fps=60" : ""),
+          [toneMap, scale, fps > 60 ? "fps=60" : null]
+            .filter(Boolean)
+            .join(","),
+          ...(toneMap
+            ? [
+                "-color_primaries",
+                "bt709",
+                "-color_trc",
+                "bt709",
+                "-colorspace",
+                "bt709",
+                "-color_range",
+                "tv",
+              ]
+            : []),
           "-c:v",
           "libx264",
           "-preset",
@@ -214,7 +224,7 @@ export async function prepareMedia({ file, root, id, poster }) {
           "+faststart",
           playback,
         ]);
-        method = "transcode";
+        method = toneMap ? "hlg-to-sdr" : "transcode";
       }
     }
     const played = await probeMedia(playback);

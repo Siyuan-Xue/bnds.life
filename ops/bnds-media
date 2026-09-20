@@ -1,0 +1,11 @@
+#!/bin/sh
+# Stable administrative entrypoint, independent of the live site's release link.
+set -eu
+export MEDIA_ROOT=/srv/bnds-life/media
+export BACKUP_ROOT=/srv/bnds-life/backups
+cd /srv/bnds-life/media-tools
+if [ "${1:-}" = backup ]; then
+    shift
+    exec /usr/local/bin/node --env-file=/srv/bnds-life/shared/.env scripts/backup-media.mjs "$@"
+fi
+exec /usr/local/bin/node --env-file=/srv/bnds-life/shared/.env scripts/media.mjs "$@"

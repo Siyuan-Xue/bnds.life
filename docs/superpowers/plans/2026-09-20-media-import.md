@@ -14,25 +14,26 @@
 
 ## Task 1：目录与数据库
 
-- [ ] 先写日期精度和公开 DTO 测试：无效日期拒绝、月份正确归组、draft/hidden 不出现在公开结果、原片不泄露。
-- [ ] 新增 `src/lib/recorded-date.ts`、`src/lib/media-catalog.ts`、`src/server/videos.ts`；页面及只读 tRPC 改用异步目录查询。
-- [ ] 新增 Drizzle 表与 `ops/migrations/001-media.sql`，支持独立 schema 测试并保留账户表。
-- [ ] demo 标记仅出现在 demo 条目，真实目录空状态可用；运行全套测试与检查。
+- [x] 先写日期精度和公开 DTO 测试：无效日期拒绝、月份正确归组、draft/hidden 不出现在公开结果、原片不泄露。
+- [x] 新增 `src/lib/recorded-date.ts`、`src/lib/media-catalog.ts`、`src/server/videos.ts`；页面及只读 tRPC 改用异步目录查询。
+- [x] 新增 Drizzle 表与 `ops/migrations/001-media.sql`，支持独立 schema 测试并保留账户表。
+- [x] demo 标记仅出现在 demo 条目，真实目录空状态可用；运行全套测试与检查。
 
 ## Task 2：离线导入
 
-- [ ] 写真实 FFmpeg 测试：正常媒体、坏文件、兼容但索引在尾部、需要转码、无封面、重复输入；先确认失败。
-- [ ] 实现 `scripts/media/files.mjs`（探测、哈希、封面和处理）、`scripts/media/store.mjs`（事务和去重）、`scripts/media.mjs`（命令行）。接口 `prepareMedia({file, root, id, poster})` 返回资源记录；`importVideo(sql, options)` 写入完整草稿。
-- [ ] 实现空间预检、进程锁、内容去重、失败恢复、显式批量清单与发布/隐藏/编辑，不自动扫描正在上传的目录。
-- [ ] 在独立测试 schema 验证真实导入、重复导入、状态切换；测试退出时只删除本次专用测试 schema/目录。
+- [x] 写真实 FFmpeg 测试：正常媒体、坏文件、兼容但索引在尾部、需要转码、无封面、重复输入；先确认失败。
+- [x] 实现 `scripts/media/files.mjs`（探测、哈希、封面和处理）、`scripts/media/store.mjs`（事务和去重）、`scripts/media.mjs`（命令行）。接口 `prepareMedia({file, root, id, poster})` 返回资源记录；`importVideo(sql, options)` 写入完整草稿。
+- [x] 实现空间预检、进程锁、内容去重、失败恢复、显式批量清单与发布/隐藏/编辑，不自动扫描正在上传的目录。
+- [x] 在独立测试 schema 验证真实导入、重复导入、状态切换；测试退出时只删除本次专用测试 schema/目录。
 
 ## Task 3：部署与交付
 
-- [ ] 创建私有原片/上传目录与公开播放/封面目录，Nginx 精确映射路径并校验配置。
-- [ ] 增加 CLI 命令、导入清单样例、备份/恢复及日常操作文档。
-- [ ] 先备份现有数据库，再应用新增表迁移；运行服务器隔离集成测试、全套测试和构建。
-- [ ] 发布新版本，验证 HTTPS、Range、无原片泄露、空目录、备份有效；推送仓库。
-- [ ] 完成独立代码审查，修复实际影响功能/数据安全的发现并验证。
+- [x] 创建私有原片/上传目录与公开播放/封面目录，Nginx 精确映射路径并校验配置。
+- [x] 增加 CLI 命令、导入清单样例、备份/恢复及日常操作文档。
+- [x] 先备份现有数据库，再应用新增表迁移；运行服务器隔离集成测试、全套测试和构建。
+- [x] 准备待命版本并完成隔离 Nginx/应用验收、私有目录保护及备份恢复。空库切换曾被自动审批拒绝，已保留原线上内容。
+- [ ] 用户随后要求开始上传真实视频：完成首批导入后启用正式目录、验证 HTTPS 并推送代码。
+- [x] 完成独立代码审查，修复实际影响功能/数据安全的发现并验证。
 
 ## Review Focus
 

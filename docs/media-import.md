@@ -28,11 +28,10 @@ rsync -rt --partial --progress -e ssh /本地视频目录/ <SSH_USER>@<SERVER_IP
 以下命令在服务器 SSH 会话中运行：
 
 ```sh
-cd /srv/bnds-life/current
-pnpm media doctor
-pnpm media import --file /srv/bnds-life/media/incoming/batch-001/video.mp4 --title '那天的操场' --date 2021-06-03
-pnpm media list
-pnpm media publish <返回的视频UUID>
+/srv/bnds-life/bin/bnds-media doctor
+/srv/bnds-life/bin/bnds-media import --file /srv/bnds-life/media/incoming/batch-001/video.mp4 --title '那天的操场' --date 2021-06-03
+/srv/bnds-life/bin/bnds-media list
+/srv/bnds-life/bin/bnds-media publish <返回的视频UUID>
 ```
 
 默认导入为草稿。确认本批均应直接展示时，可加 `--publish`。`--story-file /path/story.txt` 可提供故事正文；`--poster /path/cover.jpg` 可提供封面。没有封面会自动从视频截帧，失败时使用灰色占位图并明确提示。拍摄日期支持 `YYYY`、`YYYY-MM`、`YYYY-MM-DD`；不知道就不传，不使用上传日期或文件修改时间推断。原始嵌入元数据仅私有保存，可供人工核对拍摄日期。
@@ -40,21 +39,21 @@ pnpm media publish <返回的视频UUID>
 批量导入使用 [JSON 清单样例](../ops/media-batch.example.json)，放在视频文件旁边，填写实际标题/日期后执行。`file` 和 `poster` 相对清单所在目录；故事为字符串。逐个处理，某个失败会报告并继续其他条目，最终退出码为 1；成功条目保留，重跑以原片 SHA256 去重，不覆盖已修改的标题/故事，也不更改既有发布状态。
 
 ```sh
-pnpm media batch --manifest /srv/bnds-life/media/incoming/batch-001/batch.json --publish
+/srv/bnds-life/bin/bnds-media batch --manifest /srv/bnds-life/media/incoming/batch-001/batch.json --publish
 ```
 
 默认保留 incoming 文件。确认本地有原片时，可加 `--consume`：只有新文件成功处理、入库且再次核对原片哈希后，才删除 incoming 中的上传副本；originals 中的完整原片始终保留。重复文件不会自动清理。相同原片需要改标题/日期/故事时使用 edit，不重复导入。
 
 ```sh
-pnpm media edit <UUID> --title '新的标题' --date 2021-06 --story-file /path/story.txt
-pnpm media edit <UUID> --date ''
-pnpm media hide <UUID>
-pnpm media publish <UUID>
+/srv/bnds-life/bin/bnds-media edit <UUID> --title '新的标题' --date 2021-06 --story-file /path/story.txt
+/srv/bnds-life/bin/bnds-media edit <UUID> --date ''
+/srv/bnds-life/bin/bnds-media hide <UUID>
+/srv/bnds-life/bin/bnds-media publish <UUID>
 ```
 
 ## 媒体处理与空间
 
-兼容 MP4/H.264/yuv420p/AAC、最长边不超过 1920、码率不超过约 8 Mbps、帧率不超过 60 时，先清理公开文件的元数据并做 faststart 重封装；只有重封装后的 SHA256 与原片完全一致，才使用硬链接复用磁盘数据。此步骤不重新压缩画面；其他素材按需转成 H.264/AAC，最长边至多 1920、CRF 20、2 编码线程，不放大低分辨率素材。HDR/Dolby Vision 暂时明确报错，等看到真实素材后单独确认色彩处理，不能直接压成错误颜色。
+兼容 MP4/H.264/yuv420p/AAC、最长边不超过 1920、码率不超过约 8 Mbps、帧率不超过 60 时，先清理公开文件的元数据并做 faststart 重封装；只有重封装后的 SHA256 与原片完全一致，才使用硬链接复用磁盘数据。此步骤不重新压缩画面；其他素材按需转成 H.264/AAC，最长边至多 1920、CRF 20、2 编码线程，不放大低分辨率素材。HLG/BT.2020（含 Dolby Vision 8.4 的 HLG 基础层）使用线性浮点色调映射转成 SDR/BT.709，完整 HDR 原片保留；其他 HDR/Dolby Vision 规格仍报错，需有代表性素材验证后再支持。
 
 每次导入前要求可用空间大于该原片大小的三倍加 10 GiB 余量；批量串行处理。服务器初次检查约 151 GiB 可用，实际以 doctor 为准。几百个 200 MB 视频，加上待处理副本和播放版本，可能超过容量，应分批传输并按需使用 --consume。容量不足时停止该文件，既有视频继续服务，不自动购买存储或删除旧视频。
 
@@ -63,8 +62,7 @@ pnpm media publish <UUID>
 ## 备份及恢复
 
 ```sh
-cd /srv/bnds-life/current
-pnpm media:backup
+/srv/bnds-life/bin/bnds-media backup
 ```
 
 备份包含 PostgreSQL 自定义格式 dump 和媒体相对路径/大小/SHA256 清单，权限私有；备份不复制所有视频文件，也未设置自动定时执行。批量导入后和修改前执行一次，将备份复制到本地或其他独立设备，并保留本地原片。同盘备份不防服务器磁盘故障。
@@ -75,6 +73,14 @@ pnpm media:backup
 
 `videos`：固定 UUID、title、story、recorded_date、status、source_sha256、published_at、created_at、updated_at。`video_assets`：UUID、video_id、kind、object_key、original_filename、mime_type、size_bytes、sha256、width、height、duration_ms、processing_method、metadata、created_at。每段视频三类资源各一条。公开 DTO 只包含播放所需字段，原片名和元数据不出现在公开 API。
 
-增量迁移为 `pnpm media migrate`，只新增媒体表和索引，幂等执行，不修改账户表。当前生产接入采用 `VIDEO_CATALOG_MODE=database`；本地默认 demo，原演示目录仅用于开发测试。开发数据库模式的文件同样需要 Nginx 映射媒体目录；本地 Next.js 不提供原片或媒体写接口。
+增量迁移为 `pnpm media migrate`，只新增媒体表和索引，幂等执行，不修改账户表。新目录通过 `VIDEO_CATALOG_MODE=database` 启用；首批真实视频完成验证前，线上保留旧版演示内容。本地默认 demo，原演示目录仅用于开发测试。开发数据库模式的文件同样需要 Nginx 映射媒体目录；本地 Next.js 不提供原片或媒体写接口。
 
 验证命令：`pnpm test`、`pnpm test:media`、`pnpm check`、`pnpm build`。媒体测试依赖 FFmpeg/FFprobe；数据库测试创建随机 media_test_ 前缀 schema，结束后仅清理本次测试 schema 和临时文件。
+
+## 当前素材命名与批次
+
+用户将真实素材下载到项目的 `videos/`（已排除 Git），格式为 `YYYY-MM-DD HHmmss.mov`。仅处理下载完成、大小与修改时间稳定且 FFprobe 可读取的文件；跳过 `.downloading` 等临时文件。日期从文件名的 YYYY-MM-DD 提取；暂用去掉扩展名的原文件名作为标题，保留时分秒，不凭内容编造名称或故事。传输完成比对本地与服务器 SHA256，再导入并发布。
+
+管理员入口为 `/srv/bnds-life/bin/bnds-media`，通过独立的 `media-tools` 链接运行，和网页 `current` 发布链接分开。完整原片始终保留，本地输入不删除。
+
+HDR 转换依据：[FFmpeg tonemap](https://ffmpeg.org/ffmpeg-filters.html#tonemap)、[Dolby Vision 8.4 的 HLG 基础层](https://professionalsupport.dolby.com/s/article/Transcoding-Dolby-Vision-profile-8-4-to-HLG-on-Android)。使用 BT.709 SDR 播放版，不将其宣称为保留 Dolby Vision 动态显示映射的 HDR 播放。

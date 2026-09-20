@@ -66,3 +66,9 @@ HTTPS 首页、推荐、观看页、图标、目录与空会话 API 均返回 20
 重新搭建时，先提供 HTTP-01 目录并签发证书，再安装 [完整 Nginx 配置](../ops/nginx.conf)，避免证书尚不存在时加载 HTTPS 配置。将 `ops/reload-nginx` 以 755 权限安装到上述续期钩子路径。首次切换前的服务器 Nginx 配置备份位于 `<NGINX_CONFIG_BACKUP>`。
 
 等 `bnds.life` 备案完成后，再为其设置解析、签发独立证书并更新 Nginx 与生产 `BETTER_AUTH_URL`。迁移可继续使用现有发布目录和数据库，无需重新导入数据；届时再决定临时域名是否重定向至正式域名。
+
+## 真实媒体准备（2026-09-20）
+
+生产数据库已通过增量迁移新增 videos/video_assets；账户数据保留。新应用已完成构建和隔离验收，目前公开 current 仍为 c3c884a，真实目录等待首批视频验证后启用。媒体目录独立于 release，管理员入口 `/srv/bnds-life/bin/bnds-media`，工具链接 `/srv/bnds-life/media-tools`。
+
+已执行两次数据库备份，最近备份为 `/srv/bnds-life/backups/<BACKUP_ID>`；在独立数据库实际恢复并完成导入、页面、封面、Range 206 和隐藏/404 验收。验收服务与数据库已清理。操作方式见 [媒体说明](media-import.md)。
