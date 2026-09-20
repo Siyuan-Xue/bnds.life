@@ -7,7 +7,6 @@ import { Comments } from "./comments";
 import { VideoCard } from "./video-card";
 
 export function Watch({ video, related }: { video: Video; related: Video[] }) {
-  const [theater, setTheater] = useState(false);
   const [description, setDescription] = useState(false);
   const [geometry, setGeometry] = useState<{ source: string; ratio: number }>();
   const rememberRatio = useCallback((source: string, ratio: number) => {
@@ -20,7 +19,7 @@ export function Watch({ video, related }: { video: Video; related: Video[] }) {
   const ratio = geometry?.source === video.source ? geometry.ratio : 16 / 9;
   return (
     <div
-      className={`watch-layout ${theater ? "theater-mode" : ""}`}
+      className="watch-layout"
       style={
         {
           "--watch-ratio": ratio,
@@ -29,17 +28,7 @@ export function Watch({ video, related }: { video: Video; related: Video[] }) {
       }
     >
       <div className="watch-stage">
-        <Player
-          video={video}
-          theater={theater}
-          onAspectRatio={rememberRatio}
-          onTheater={() => {
-            setTheater((value) => !value);
-            requestAnimationFrame(() =>
-              window.scrollTo({ top: 0, behavior: "instant" }),
-            );
-          }}
-        />
+        <Player video={video} onAspectRatio={rememberRatio} />
       </div>
       <section className="watch-details">
         <h1>{video.title}</h1>

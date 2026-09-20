@@ -10,16 +10,12 @@ export function Player({
   video,
   active = true,
   feed = false,
-  theater,
-  onTheater,
   onAspectRatio,
   children,
 }: {
   video: Video;
   active?: boolean;
   feed?: boolean;
-  theater?: boolean;
-  onTheater?: () => void;
   onAspectRatio?: (source: string, ratio: number) => void;
   children?: React.ReactNode;
 }) {
@@ -31,8 +27,6 @@ export function Player({
   const [volume, setVolume] = useState(1);
   const [current, setCurrent] = useState(0);
   const [duration, setDuration] = useState(video.duration);
-  const [settings, setSettings] = useState(false);
-  const [speed, setSpeed] = useState(1);
   const [error, setError] = useState(false);
   const [full, setFull] = useState(false);
 
@@ -114,7 +108,6 @@ export function Player({
       }
       if (event.key === "m") setMuted((value) => !value);
       if (event.key === "f") fullscreen();
-      if (event.key === "t" && onTheater) onTheater();
       if (["ArrowLeft", "ArrowRight"].includes(event.key) && media.current) {
         event.preventDefault();
         media.current.currentTime = Math.max(
@@ -128,7 +121,7 @@ export function Player({
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [active, duration, fullscreen, onTheater, toggle]);
+  }, [active, duration, fullscreen, toggle]);
 
   function seek(value: string) {
     if (media.current) {
@@ -210,7 +203,7 @@ export function Player({
               aria-label={full ? "退出全屏" : "全屏"}
               onClick={fullscreen}
             >
-              <Icon name="fullscreen" />
+              <Icon name={full ? "shrink" : "fullscreen"} />
             </button>
           </div>
         )}
@@ -265,54 +258,12 @@ export function Player({
                 {formatDuration(current)} / {formatDuration(duration)}
               </span>
               <span className="toolbar-space" />
-              <div className="playback-settings">
-                <button
-                  className="icon-button"
-                  aria-label="播放设置"
-                  aria-expanded={settings}
-                  onClick={() => setSettings(!settings)}
-                >
-                  <Icon name="settings" />
-                </button>
-                {settings && (
-                  <div className="speed-menu">
-                    <label>
-                      播放速度
-                      <select
-                        aria-label="播放速度"
-                        value={speed}
-                        onChange={(event) => {
-                          const value = Number(event.target.value);
-                          setSpeed(value);
-                          if (media.current) media.current.playbackRate = value;
-                          setSettings(false);
-                        }}
-                      >
-                        {[0.5, 0.75, 1, 1.25, 1.5, 2].map((value) => (
-                          <option key={value} value={value}>
-                            {value === 1 ? "正常" : `${value} 倍`}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                  </div>
-                )}
-              </div>
-              {onTheater && (
-                <button
-                  className="icon-button theater-button"
-                  aria-label={theater ? "默认视图" : "剧场模式"}
-                  onClick={onTheater}
-                >
-                  <Icon name="theater" />
-                </button>
-              )}
               <button
                 className="icon-button"
                 aria-label={full ? "退出全屏" : "全屏"}
                 onClick={fullscreen}
               >
-                <Icon name="fullscreen" />
+                <Icon name={full ? "shrink" : "fullscreen"} />
               </button>
             </div>
           )}

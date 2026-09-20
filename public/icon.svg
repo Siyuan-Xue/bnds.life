@@ -1,9 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
   <title>BNDS.life</title>
-  <path fill="#F22A1A" fill-rule="evenodd" d="M4 4h56v56H4ZM14 14v36h36V14Z"/>
-  <path fill="#FF8500" d="M4 4h56L50 14H14Z"/>
-  <path fill="#006ECF" d="M60 4v56L50 50V14Z"/>
-  <path fill="#73B338" d="M60 60H4L14 50h36Z"/>
+  <path fill="#F22A1A" fill-rule="evenodd" d="M32 2 62 32 32 62 2 32ZM32 12 12 32 32 52 52 32Z"/>
+  <path fill="#FF8500" d="M32 2 62 32 52 32 32 12Z"/>
+  <path fill="#006ECF" d="M62 32 32 62 32 52 52 32Z"/>
+  <path fill="#73B338" d="M32 62 2 32 12 32 32 52Z"/>
   <g fill="#828691">
     <rect x="23" y="22" width="6" height="20" rx="2"/>
     <rect x="35" y="22" width="6" height="20" rx="2"/>

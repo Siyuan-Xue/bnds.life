@@ -141,7 +141,11 @@ p {
   padding: 0 18px;
   font-size: 16px;
   box-shadow: inset 0 1px 2px #eee;
-  outline-offset: -1px;
+}
+.search-form input:focus {
+  outline: 2px solid var(--blue);
+  outline-offset: -2px;
+  box-shadow: none;
 }
 .search-submit {
   width: 64px;
@@ -504,9 +508,6 @@ p {
   display: grid;
   place-items: center;
 }
-.center-play svg {
-  margin-left: 4px;
-}
 .player-controls {
   opacity: 0;
   transition: opacity 0.15s;
@@ -582,31 +583,6 @@ p {
 .toolbar-space {
   flex: 1;
 }
-.playback-settings {
-  position: relative;
-}
-.speed-menu {
-  position: absolute;
-  bottom: 52px;
-  right: -40px;
-  background: #181818f5;
-  padding: 16px;
-  border-radius: 8px;
-  min-width: 190px;
-  box-shadow: 0 3px 16px #0003;
-}
-.speed-menu label {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  white-space: nowrap;
-}
-.speed-menu select {
-  color: white;
-  background: #333;
-  padding: 4px;
-  border-radius: 4px;
-}
 .player-error {
   position: absolute;
   inset: 0;
@@ -622,27 +598,6 @@ p {
   color: #111;
   padding: 8px 16px;
   border-radius: 24px;
-}
-.theater-mode {
-  max-width: none;
-  padding-top: 0;
-}
-.theater-mode .watch-stage {
-  grid-column: 1 / span 2;
-  margin: 0 -16px;
-  background: #000;
-}
-.theater-mode .watch-player {
-  margin: auto;
-  height: min(75dvh, calc(100vw * 9 / 16));
-  max-height: none;
-  width: 100%;
-  border-radius: 0;
-  aspect-ratio: auto;
-}
-.theater-mode .related-videos {
-  grid-row: 2;
-  margin-top: 16px;
 }
 .comments-inline {
   margin-top: 24px;
@@ -1110,13 +1065,6 @@ p {
     flex: 0 0 168px;
     width: 168px;
   }
-  .theater-mode .watch-stage {
-    grid-column: 1;
-    margin: 0 -24px;
-  }
-  .theater-mode .related-videos {
-    grid-row: 3;
-  }
   .feed-comments {
     width: 42vw;
     margin-right: 0;
@@ -1261,16 +1209,6 @@ p {
   }
   .playback-toolbar {
     gap: 0;
-  }
-  .theater-button {
-    display: none;
-  }
-  .theater-mode .watch-stage {
-    margin: 0;
-  }
-  .theater-mode .watch-player {
-    height: auto;
-    aspect-ratio: 16/9;
   }
   .feed-item {
     min-height: 0;
