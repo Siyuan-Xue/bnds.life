@@ -806,23 +806,17 @@ p {
 }
 .story-dialog {
   position: fixed;
-  /* A rounded overlay needs space on every outside edge, including safe areas. */
-  --story-edge-gap: max(
-    12px,
-    env(safe-area-inset-left, 0px),
-    env(safe-area-inset-right, 0px)
-  );
-  --story-bottom-gap: max(12px, env(safe-area-inset-bottom, 0px));
-  inset: auto auto var(--story-bottom-gap) 50%;
-  transform: translateX(-50%);
-  width: min(calc(100% - 2 * var(--story-edge-gap)), 560px);
+  /* Bottom drawers may meet three viewport edges; only the top is rounded. */
+  inset: auto 0 0;
+  width: 100%;
   height: min(75dvh, 640px);
-  max-width: calc(100% - 2 * var(--story-edge-gap));
-  max-height: calc(100dvh - 56px - 12px - var(--story-bottom-gap));
+  max-width: 100%;
+  max-height: calc(100dvh - 56px);
   margin: 0;
-  padding: 0;
+  padding: 0 env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px)
+    env(safe-area-inset-left, 0px);
   border: 0;
-  border-radius: 12px;
+  border-radius: 12px 12px 0 0;
   overflow: hidden;
   background: #fff;
   color: var(--text);
