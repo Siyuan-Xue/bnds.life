@@ -37,7 +37,11 @@ export async function withMediaLock(sql, operation) {
   try {
     const [result] =
       await connection`SELECT pg_try_advisory_lock(1112425555) AS locked`;
-    if (!result.locked) throw new Error("另一项媒体操作正在执行，请稍后重试");
+    if (!result.locked) {
+      const error = new Error("另一项媒体操作正在执行，请稍后重试");
+      error.code = "MEDIA_LOCK_BUSY";
+      throw error;
+    }
     locked = true;
     return await operation(connection);
   } finally {
@@ -51,7 +55,11 @@ export async function withMediaLock(sql, operation) {
 export async function migrate(sql) {
   const migration = (
     await Promise.all(
-      ["001-media.sql", "002-native-playback.sql"].map((name) =>
+      [
+        "001-media.sql",
+        "002-native-playback.sql",
+        "004-video-deletion.sql",
+      ].map((name) =>
         readFile(
           new URL(`../../ops/migrations/${name}`, import.meta.url),
           "utf8",
@@ -105,6 +113,16 @@ export async function importVideo(sql, options) {
   }
   return withMediaLock(sql, async (conn) => {
     const sourceSha256 = await hashFile(file);
+    const [deleted] =
+      await conn`SELECT source_sha256 FROM deleted_video_sources WHERE source_sha256=${sourceSha256}`;
+    if (deleted) {
+      // Only the incoming server copies may be consumed; local input is retained.
+      const { removeDeletedIncoming } = await import("./deletion.mjs");
+      await removeDeletedIncoming(root, [sourceSha256]).catch(() => {});
+      const error = new Error("原片已被永久删除，禁止重新导入");
+      error.code = "VIDEO_SOURCE_DELETED";
+      throw error;
+    }
     const [existing] =
       await conn`SELECT id,status FROM videos WHERE source_sha256=${sourceSha256}`;
     if (existing)
@@ -144,29 +162,38 @@ export async function importVideo(sql, options) {
 export async function setStatus(sql, root, id, status) {
   if (!uuidPattern.test(id) || !["published", "hidden"].includes(status))
     throw new Error("无效的视频 ID 或状态");
-  return withMediaLock(sql, async (conn) => {
-    const [row] = await conn`SELECT id FROM videos WHERE id=${id}`;
-    if (!row) throw new Error("未找到视频");
-    if (status === "published") {
-      const assets =
-        await conn`SELECT * FROM video_assets WHERE video_id=${id}`;
-      if (
-        !["original", "playback", "poster"].every((kind) =>
-          assets.some((a) => a.kind === kind),
+  return withMediaLock(sql, (connection) =>
+    transaction(connection, async (conn) => {
+      await conn`SELECT id FROM videos WHERE id=${id} FOR UPDATE`;
+      const [row] =
+        await conn`SELECT id FROM videos WHERE id=${id} AND NOT EXISTS (SELECT 1 FROM deleted_video_sources WHERE source_sha256=videos.source_sha256)`;
+      if (!row) throw new Error("未找到视频");
+      if (status === "published") {
+        const assets =
+          await conn`SELECT * FROM video_assets WHERE video_id=${id}`;
+        if (
+          !["original", "playback", "poster"].every((kind) =>
+            assets.some((a) => a.kind === kind),
+          )
         )
-      )
-        throw new Error("媒体资源尚未齐全，不能发布");
-      for (const asset of assets) await verifyAsset(root, asset);
-    }
-    await conn`UPDATE videos SET status=${status},published_at=CASE WHEN ${status}='published' THEN COALESCE(published_at,now()) ELSE published_at END,updated_at=now() WHERE id=${id}`;
-    return { id, status };
-  });
+          throw new Error("媒体资源尚未齐全，不能发布");
+        for (const asset of assets) await verifyAsset(root, asset);
+      }
+      const changed =
+        await conn`UPDATE videos SET status=${status},published_at=CASE WHEN ${status}='published' THEN COALESCE(published_at,now()) ELSE published_at END,updated_at=now() WHERE id=${id} AND NOT EXISTS (SELECT 1 FROM deleted_video_sources WHERE source_sha256=videos.source_sha256) RETURNING id`;
+      if (!changed.length) throw new Error("视频不存在或已申请永久删除");
+      return { id, status };
+    }),
+  );
 }
 
 // Backfill existing videos without changing their titles, dates, publication or fallback.
 export async function addNativePlayback(sql, root, id) {
   if (!uuidPattern.test(id)) throw new Error("无效的视频 ID");
   return withMediaLock(sql, async (conn) => {
+    const [allowed] =
+      await conn`SELECT id FROM videos WHERE id=${id} AND NOT EXISTS (SELECT 1 FROM deleted_video_sources WHERE source_sha256=videos.source_sha256)`;
+    if (!allowed) throw new Error("视频不存在或已申请永久删除");
     const assets = await conn`SELECT * FROM video_assets WHERE video_id=${id}`;
     if (assets.some((a) => a.kind === "native"))
       return { id, skipped: "already-present" };

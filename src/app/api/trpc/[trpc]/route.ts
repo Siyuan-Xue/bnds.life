@@ -15,8 +15,14 @@ const createContext = async (req: NextRequest) => {
   });
 };
 
-const handler = (req: NextRequest) =>
-  fetchRequestHandler({
+const handler = (req: NextRequest) => {
+  if (
+    req.method === "POST" &&
+    req.headers.get("origin") !== new URL(env.BETTER_AUTH_URL).origin
+  ) {
+    return new Response("Forbidden origin", { status: 403 });
+  }
+  return fetchRequestHandler({
     endpoint: "/api/trpc",
     req,
     router: appRouter,
@@ -30,5 +36,6 @@ const handler = (req: NextRequest) =>
           }
         : undefined,
   });
+};
 
 export { handler as GET, handler as POST };

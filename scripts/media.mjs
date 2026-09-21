@@ -140,6 +140,17 @@ try {
         });
         console.log(JSON.stringify({ index, file: item.file, ...result }));
       } catch (error) {
+        if (error.code === "VIDEO_SOURCE_DELETED") {
+          console.log(
+            JSON.stringify({
+              index,
+              file: item?.file,
+              deleted: true,
+              skipped: "deleted-source",
+            }),
+          );
+          continue;
+        }
         failures++;
         console.error(
           JSON.stringify({ index, file: item?.file, error: error.message }),

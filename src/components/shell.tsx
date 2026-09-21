@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "./icon";
 import { BrandLogo } from "./brand-logo";
+import { AccountMenu } from "./account-menu";
 import { MOBILE_LAYOUT_QUERY } from "~/lib/video-layout";
 
 export function Shell({ children }: { children: React.ReactNode }) {
@@ -108,6 +109,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
           >
             <Icon name="search" />
           </button>
+          <AccountMenu />
         </div>
       </header>
       {overlay && (

@@ -11,6 +11,8 @@ import {
   index,
   uniqueIndex,
   check,
+  foreignKey,
+  unique,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
@@ -71,20 +73,87 @@ export const videoAssets = pgTable(
   ],
 );
 
-export const user = pgTable("user", {
-  id: text("id").primaryKey(),
-  name: text("name").notNull(),
-  email: text("email").notNull().unique(),
-  emailVerified: boolean("email_verified")
-    .$defaultFn(() => false)
-    .notNull(),
-  image: text("image"),
-  createdAt: timestamp("created_at")
-    .$defaultFn(() => /* @__PURE__ */ new Date())
-    .notNull(),
-  updatedAt: timestamp("updated_at")
-    .$defaultFn(() => /* @__PURE__ */ new Date())
-    .notNull(),
+export const user = pgTable(
+  "user",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull(),
+    isOfficial: boolean("is_official").notNull().default(false),
+    email: text("email").notNull().unique(),
+    emailVerified: boolean("email_verified")
+      .$defaultFn(() => false)
+      .notNull(),
+    image: text("image"),
+    createdAt: timestamp("created_at")
+      .$defaultFn(() => /* @__PURE__ */ new Date())
+      .notNull(),
+    updatedAt: timestamp("updated_at")
+      .$defaultFn(() => /* @__PURE__ */ new Date())
+      .notNull(),
+  },
+  (t) => [
+    uniqueIndex("user_one_official_idx")
+      .on(t.isOfficial)
+      .where(sql`${t.isOfficial} = true`),
+    uniqueIndex("user_email_lower_idx").on(sql`lower(${t.email})`),
+  ],
+);
+
+export const videoComments = pgTable(
+  "video_comments",
+  {
+    id: uuid("id").primaryKey(),
+    videoId: uuid("video_id")
+      .notNull()
+      .references(() => mediaVideos.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    parentId: uuid("parent_id"),
+    body: text("body").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, precision: 3 })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index("video_comments_browse_idx").on(t.videoId, t.parentId, t.createdAt),
+    index("video_comments_user_idx").on(t.userId, t.createdAt),
+    unique("video_comments_id_video_id_key").on(t.id, t.videoId),
+    foreignKey({
+      columns: [t.parentId, t.videoId],
+      foreignColumns: [t.id, t.videoId],
+    }).onDelete("cascade"),
+    check(
+      "video_comments_body_check",
+      sql`length(trim(${t.body})) BETWEEN 1 AND 5000`,
+    ),
+  ],
+);
+
+export const videoDeletionJobs = pgTable("video_deletion_jobs", {
+  id: uuid("id").primaryKey(),
+  videoId: uuid("video_id").notNull().unique(),
+  videoTitle: text("video_title").notNull().default("视频"),
+  sourceSha256: text("source_sha256").notNull(),
+  requestedBy: text("requested_by").notNull(),
+  status: text("status")
+    .$type<"pending" | "running" | "complete" | "failed">()
+    .notNull()
+    .default("pending"),
+  error: text("error"),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+export const deletedVideoSources = pgTable("deleted_video_sources", {
+  sourceSha256: text("source_sha256").primaryKey(),
+  deletedAt: timestamp("deleted_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
 });
 
 export const session = pgTable("session", {

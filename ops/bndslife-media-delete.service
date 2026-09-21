@@ -1,0 +1,26 @@
+[Unit]
+Description=BNDS.life durable media deletion worker
+After=network.target postgresql.service
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/srv/bnds-life/media-tools
+EnvironmentFile=/srv/bnds-life/shared/.env
+ExecStart=/usr/bin/env MEDIA_ROOT=/srv/bnds-life/media /usr/local/bin/node /srv/bnds-life/media-tools/scripts/media-delete-worker.mjs
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=30
+KillSignal=SIGTERM
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/srv/bnds-life/media
+CapabilityBoundingSet=
+RestrictSUIDSGID=true
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target
