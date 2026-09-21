@@ -26,7 +26,12 @@ test("one editable story, many ordinary comments, preserved replies and concurre
       ),
     );
   try {
-    for (const n of ["001-media", "003-community", "004-video-deletion"])
+    for (const n of [
+      "001-media",
+      "003-community",
+      "004-video-deletion",
+      "006-featured-videos",
+    ])
       await migrate(n);
     const c = createCommunity(drizzle(sql, { schema }));
     assert.equal(typeof c.saveStory, "function");

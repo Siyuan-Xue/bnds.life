@@ -624,7 +624,7 @@ p {
 }
 .recommend-layout {
   --feed-height: max(0px, calc(100dvh - 96px));
-  --feed-story-width: min(33vw, 480px);
+  --feed-story-width: clamp(240px, 26vw, 420px);
   --feed-story-player-space: 96px;
   --feed-navigation-size: 56px;
   --feed-navigation-inset: 24px;
@@ -650,7 +650,7 @@ p {
   display: none;
 }
 .feed-item {
-  --feed-reserved-width: calc(var(--feed-end-space) + 72px);
+  --feed-reserved-width: calc(var(--feed-end-space) + 96px);
   --feed-offset: var(--feed-end-space);
   height: calc(100dvh - 80px);
   min-height: 200px;
@@ -677,6 +677,7 @@ p {
 .feed-player {
   width: 100%;
   height: 100%;
+  background: #000;
 }
 .feed-scrim {
   position: absolute;
@@ -689,7 +690,7 @@ p {
 }
 .inactive-poster {
   position: relative;
-  background: #111;
+  background: #000;
   border-radius: 12px;
   overflow: hidden;
 }
@@ -759,9 +760,11 @@ p {
   right: 16px;
   top: 16px;
   display: flex;
-  gap: 8px;
+  gap: 4px;
 }
 .feed-top-controls .icon-button {
+  flex-shrink: 1;
+  min-width: 24px;
   background: #0006;
 }
 .feed-fullscreen {
@@ -793,33 +796,18 @@ p {
   background: #e5e5e5;
 }
 .feed-story {
-  /* Match the adjacent 9:16 frame, including when its width limits its height. */
-  --story-frame-height: max(
-    0px,
-    min(
-      var(--feed-height),
-      calc(
-        (
-            100vw - var(--sidebar-width) - var(--feed-story-width) -
-              var(--feed-end-space) - var(--feed-story-player-space)
-          ) *
-          16 / 9
-      )
-    )
-  );
+  /* Top and outer height follow the rendered active frame, at any media ratio. */
+  position: absolute;
+  right: var(--feed-end-space);
   width: var(--feed-story-width);
-  flex-shrink: 0;
-  height: var(--story-frame-height);
-  align-self: flex-start;
-  margin: calc(
-      (max(200px, calc(100dvh - 80px)) - var(--story-frame-height)) / 2
-    )
-    var(--feed-end-space) 0 0;
   border: 1px solid #d9d9d9;
   border-radius: 12px;
   overflow: hidden;
   background: #fff;
   z-index: 30;
+}
+.has-story .feed-scroll {
+  margin-right: calc(var(--feed-story-width) + var(--feed-end-space));
 }
 .has-story .feed-item {
   --feed-reserved-width: var(--feed-story-player-space);
@@ -1063,6 +1051,43 @@ p {
   .feed-caption {
     right: 64px;
     bottom: 28px;
+  }
+  /* Wide clips keep their controls on the picture and details below it. */
+  .feed-item.feed-item-wide {
+    --feed-height: max(0px, calc(100dvh - 56px - 96px));
+    padding-bottom: 96px;
+  }
+  .feed-item-wide .feed-caption {
+    top: calc(100% + 16px);
+    bottom: auto;
+    right: 80px;
+    color: var(--text);
+    text-shadow: none;
+  }
+  .feed-item-wide .feed-caption > a {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .feed-item-wide .feed-caption .video-management > .text-button {
+    color: var(--blue);
+  }
+  .feed-item-wide .feed-actions {
+    top: calc(100% + 12px);
+    bottom: auto;
+    color: var(--text);
+  }
+  .feed-item-wide .feed-actions button {
+    background: var(--soft);
+  }
+  .feed-item-wide .feed-actions button:hover {
+    background: #e5e5e5;
+  }
+  .feed-item-wide .feed-actions button[aria-expanded="true"] {
+    background: var(--blue-soft);
   }
   .feed-navigation {
     display: none;

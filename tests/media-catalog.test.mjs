@@ -64,3 +64,70 @@ test("真实推荐覆盖任意长度目录且保持起始视频", () => {
   assert.equal(new Set(result.map((v) => v.id)).size, 350);
   assert.notDeepEqual(result, entries);
 });
+
+const published = {
+  id: "duration-fixture",
+  title: "时长边界",
+  story: null,
+  recordedDate: null,
+  status: "published",
+};
+const playableAssets = (original, playback) => [
+  {
+    kind: "original",
+    objectKey: "originals/private.mov",
+    durationMs: original,
+  },
+  { kind: "playback", objectKey: "playback/video.mp4", durationMs: playback },
+  { kind: "poster", objectKey: "posters/cover.jpg" },
+];
+
+test("分类时长保留毫秒，优先原片以免转码尾帧改变60秒边界", () => {
+  for (const [original, playback, seconds] of [
+    [59999, 60020, 59.999],
+    [60000, 60020, 60],
+    [60001, 59990, 60.001],
+  ])
+    assert.equal(
+      publicVideo(published, playableAssets(original, playback)).duration,
+      seconds,
+    );
+});
+
+test("原片缺少有效时长时回退播放资源，两者都无效则不公开", () => {
+  for (const invalid of [undefined, null, 0, -1, NaN, Infinity]) {
+    assert.equal(
+      publicVideo(published, playableAssets(invalid, 60001)).duration,
+      60.001,
+    );
+    assert.equal(
+      publicVideo(published, playableAssets(invalid, invalid)),
+      undefined,
+    );
+  }
+});
+
+test("精选只公开已发布的首页视频，隐藏或短拍的精选标记不泄露", () => {
+  const featured = { ...published, isFeatured: true };
+  assert.equal(
+    publicVideo(featured, playableAssets(60001, 60020)).isFeatured,
+    true,
+  );
+  for (const duration of [59999, 60000])
+    assert.equal(
+      publicVideo(featured, playableAssets(duration, 60020)).isFeatured,
+      undefined,
+    );
+  for (const status of ["draft", "hidden"])
+    assert.equal(
+      publicVideo({ ...featured, status }, playableAssets(60001, 60020)),
+      undefined,
+    );
+  assert.equal(
+    publicVideo(
+      { ...published, isFeatured: false },
+      playableAssets(60001, 60020),
+    ).isFeatured,
+    undefined,
+  );
+});

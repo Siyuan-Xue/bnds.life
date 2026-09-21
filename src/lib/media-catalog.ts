@@ -1,5 +1,6 @@
 import type { Video } from "./videos";
 import { normalizeRecordedDate } from "./recorded-date.ts";
+import { isHomeVideo } from "./video-sections.ts";
 
 type CatalogRow = {
   id: string;
@@ -7,6 +8,7 @@ type CatalogRow = {
   story: string | null;
   recordedDate: string | null;
   status: string;
+  isFeatured?: boolean;
 };
 type AssetRow = {
   kind: string;
@@ -22,6 +24,15 @@ export function publicVideo(
   if (row.status !== "published") return undefined;
   const playback = assets.find((a) => a.kind === "playback");
   const poster = assets.find((a) => a.kind === "poster");
+  // Transcoding can add or remove a tail frame. Keep classification tied to
+  // the source's stored milliseconds, with playback as the legacy fallback.
+  const durationMs = [
+    assets.find((a) => a.kind === "original")?.durationMs,
+    playback?.durationMs,
+  ].find(
+    (duration): duration is number =>
+      typeof duration === "number" && Number.isFinite(duration) && duration > 0,
+  );
   const safe = (key: string, prefix: string) =>
     key.startsWith(prefix) &&
     /^[a-zA-Z0-9/_\-.]+$/.test(key) &&
@@ -31,11 +42,11 @@ export function publicVideo(
     !poster ||
     !safe(playback.objectKey, "playback/") ||
     !safe(poster.objectKey, "posters/") ||
-    !playback.durationMs ||
-    playback.durationMs <= 0
+    durationMs === undefined
   )
     return undefined;
   const recordedAt = normalizeRecordedDate(row.recordedDate);
+  const duration = durationMs / 1000;
   const native = assets.find((a) => a.kind === "native");
   const contentType =
     native?.metadata &&
@@ -55,12 +66,15 @@ export function publicVideo(
   return {
     id: row.id,
     title: row.title,
-    duration: playback.durationMs / 1000,
+    duration,
     source: `/media/${playback.objectKey}`,
     ...(nativeSource ? { nativeSource } : {}),
     poster: `/media/${poster.objectKey}`,
     ...(row.story ? { story: row.story } : {}),
     ...(recordedAt ? { recordedAt } : {}),
+    ...(row.isFeatured && isHomeVideo({ duration })
+      ? { isFeatured: true }
+      : {}),
   };
 }
 

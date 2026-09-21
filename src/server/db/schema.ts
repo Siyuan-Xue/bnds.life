@@ -24,6 +24,7 @@ export const mediaVideos = pgTable(
     story: text("story"),
     recordedDate: text("recorded_date"),
     status: text("status").notNull().default("draft"),
+    isFeatured: boolean("is_featured").notNull().default(false),
     sourceSha256: text("source_sha256").notNull().unique(),
     publishedAt: timestamp("published_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })

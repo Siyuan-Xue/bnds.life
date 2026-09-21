@@ -8,6 +8,7 @@ export type Video = {
   story?: string;
   recordedAt?: string;
   isDemo?: boolean;
+  isFeatured?: boolean;
 };
 
 const titles = [

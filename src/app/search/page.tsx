@@ -1,10 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { FeaturedVideos } from "~/components/featured-videos";
 import { VideoTimeline } from "~/components/video-timeline";
-import { listHomeVideos } from "~/server/videos";
+import { listVideos } from "~/server/videos";
 
-export default async function Home({
+export default async function Search({
   searchParams,
 }: {
   searchParams: Promise<{ q?: string | string[] }>;
@@ -12,18 +11,23 @@ export default async function Home({
   const params = await searchParams;
   const query =
     typeof params.q === "string" ? params.q.slice(0, 200).trim() : "";
-  if (query) redirect(`/search?${new URLSearchParams({ q: query })}`);
-  const videos = await listHomeVideos();
+  if (!query) redirect("/");
+  const videos = await listVideos(query);
   return (
     <div className="home-page">
-      <h1 className="sr-only">首页</h1>
-      <FeaturedVideos videos={videos.filter((video) => video.isFeatured)} />
+      <h1 className="sr-only">搜索视频</h1>
+      <div className="browse-toolbar">
+        <span className="search-query" title={query}>
+          搜索：{query}
+        </span>
+        <Link href="/">返回首页</Link>
+      </div>
       {videos.length ? (
         <VideoTimeline videos={videos} />
       ) : (
         <div className="empty-state">
-          <h2>暂时没有长视频</h2>
-          <Link href="/recommend">去看看短拍</Link>
+          <h2>没有找到相关视频</h2>
+          <p>试试其他关键词。</p>
         </div>
       )}
     </div>

@@ -2,10 +2,19 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { findVideo, listVideos, recommendVideos } from "~/server/videos";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
-import { createCommunity, updateInput } from "~/server/community";
+import {
+  createCommunity,
+  featuredInput,
+  updateInput,
+} from "~/server/community";
 import { protectedProcedure } from "~/server/api/trpc";
 
 export const videoRouter = createTRPCRouter({
+  setFeatured: protectedProcedure
+    .input(featuredInput)
+    .mutation(({ ctx, input }) =>
+      createCommunity(ctx.db).setFeatured(ctx.session.user.id, input),
+    ),
   offlineVideos: protectedProcedure.query(({ ctx }) =>
     createCommunity(ctx.db).offlineVideos(ctx.session.user.id),
   ),

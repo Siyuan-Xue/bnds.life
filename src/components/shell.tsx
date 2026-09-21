@@ -77,7 +77,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
             <span>BNDS.life</span>
           </Link>
         </div>
-        <form action="/" className="search-form" role="search">
+        <form action="/search" className="search-form" role="search">
           <button
             className="icon-button search-back"
             type="button"
@@ -139,7 +139,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
             onClick={() => setOverlay(false)}
           >
             <Icon name="recommend" selected={pathname === "/recommend"} />
-            <span>推荐</span>
+            <span>短拍</span>
           </Link>
         </nav>
       </aside>

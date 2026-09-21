@@ -4,6 +4,7 @@ import Image from "next/image";
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type CSSProperties,
@@ -17,11 +18,16 @@ import { isPlaybackShortcut } from "~/lib/shortcuts";
 import {
   MOBILE_LAYOUT_QUERY,
   recommendationAspectRatio,
+  recommendationResizeScrollTop,
 } from "~/lib/video-layout";
 
 export function Recommend({ videos }: { videos: Video[] }) {
+  const layout = useRef<HTMLDivElement>(null);
   const scroll = useRef<HTMLDivElement>(null);
+  const activeFrame = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(0);
+  const activeIndex = useRef(0);
+  const itemHeight = useRef<number | undefined>(undefined);
   const [storyOpen, setStoryOpen] = useState(false);
   const [mobile, setMobile] = useState(false);
   const sidePanelOpen = storyOpen && !mobile;
@@ -34,6 +40,57 @@ export function Recommend({ videos }: { videos: Video[] }) {
   const storyButton = useRef<HTMLButtonElement>(null);
   const panel = useRef<HTMLDivElement>(null);
   const storyDialog = useRef<HTMLDialogElement>(null);
+  const realignFeedHeight = useCallback(() => {
+    const root = scroll.current;
+    if (!root) return false;
+    const height = root.firstElementChild?.getBoundingClientRect().height ?? 0;
+    const top = recommendationResizeScrollTop(
+      activeIndex.current,
+      itemHeight.current,
+      height,
+    );
+    if (Number.isFinite(height) && height > 0) itemHeight.current = height;
+    if (top === undefined) return false;
+    root.scrollTo({ top, behavior: "instant" });
+    return true;
+  }, []);
+  useLayoutEffect(() => {
+    const item = scroll.current?.firstElementChild;
+    if (!item) return;
+    realignFeedHeight();
+    const observer = new ResizeObserver(realignFeedHeight);
+    observer.observe(item, { box: "border-box" });
+    return () => observer.disconnect();
+  }, [realignFeedHeight, videos.length]);
+  const [storyFrame, setStoryFrame] = useState<{
+    top: number;
+    height: number;
+  }>();
+  useLayoutEffect(() => {
+    const frame = activeFrame.current;
+    const root = layout.current;
+    const scroller = scroll.current;
+    if (!sidePanelOpen || !frame || !root || !scroller) return;
+    const sync = () => {
+      const bounds = frame.getBoundingClientRect();
+      const top = bounds.top - root.getBoundingClientRect().top;
+      const height = bounds.height;
+      setStoryFrame((previous) =>
+        previous?.top === top && previous.height === height
+          ? previous
+          : { top, height },
+      );
+    };
+    sync();
+    const observer = new ResizeObserver(sync);
+    observer.observe(frame);
+    observer.observe(root);
+    scroller.addEventListener("scroll", sync, { passive: true });
+    return () => {
+      observer.disconnect();
+      scroller.removeEventListener("scroll", sync);
+    };
+  }, [active, sidePanelOpen]);
   useEffect(() => {
     const query = window.matchMedia(MOBILE_LAYOUT_QUERY);
     const sync = () => setMobile(query.matches);
@@ -100,42 +157,43 @@ export function Recommend({ videos }: { videos: Video[] }) {
   const current = videos[active];
   if (!current) return <p className="empty-state">暂时没有视频</p>;
   return (
-    <div className={`recommend-layout ${sidePanelOpen ? "has-story" : ""}`}>
+    <div
+      className={`recommend-layout ${sidePanelOpen ? "has-story" : ""}`}
+      ref={layout}
+    >
       <div
         className="feed-scroll"
         ref={scroll}
         onScroll={() => {
           const root = scroll.current;
-          if (root)
-            setActive(
-              Math.max(
-                0,
-                Math.min(
-                  videos.length - 1,
-                  Math.round(
-                    root.scrollTop / (root.scrollHeight / videos.length),
-                  ),
-                ),
-              ),
-            );
+          // Resize scroll events can arrive before ResizeObserver. Correct the
+          // old pixel offset before it can select a different active video.
+          if (!root || realignFeedHeight()) return;
+          const index = Math.max(
+            0,
+            Math.min(
+              videos.length - 1,
+              Math.round(root.scrollTop / (root.scrollHeight / videos.length)),
+            ),
+          );
+          activeIndex.current = index;
+          setActive(index);
         }}
-        aria-label="推荐视频列表"
+        aria-label="短拍视频列表"
       >
         {videos.map((video, index) => {
-          const ratio = recommendationAspectRatio(
-            ratios[video.source],
-            sidePanelOpen,
-          );
+          const ratio = recommendationAspectRatio(ratios[video.source]);
           return (
             <article
               key={video.id}
-              className="feed-item"
+              className={`feed-item ${ratio > 1 ? "feed-item-wide" : ""}`}
               aria-label={`${index + 1} / ${videos.length}：${video.title}`}
               aria-hidden={index !== active}
               inert={index !== active}
             >
               <div
                 className="feed-video-wrap"
+                ref={index === active ? activeFrame : undefined}
                 style={{ "--frame-ratio": ratio } as CSSProperties}
               >
                 {Math.abs(index - active) <= 1 ? (
@@ -151,11 +209,11 @@ export function Recommend({ videos }: { videos: Video[] }) {
                   </div>
                 )}
                 <div className="feed-caption">
-                  <p>
-                    {video.isDemo && (
+                  {video.isDemo && (
+                    <p>
                       <span className="feed-sample">占位预览</span>
-                    )}
-                  </p>
+                    </p>
+                  )}
                   <Link href={`/watch/${video.id}`}>{video.title}</Link>
                   {index === active && (
                     <VideoManagement key={video.id} video={video} />
@@ -196,7 +254,16 @@ export function Recommend({ videos }: { videos: Video[] }) {
         </button>
       </div>
       {sidePanelOpen && (
-        <div className="feed-story" ref={panel} aria-label="视频故事">
+        <div
+          className="feed-story"
+          ref={panel}
+          aria-label="视频故事"
+          style={
+            storyFrame
+              ? { top: storyFrame.top, height: storyFrame.height }
+              : { visibility: "hidden" }
+          }
+        >
           <StoryPanel video={current} onClose={closeStory} />
         </div>
       )}
@@ -213,7 +280,12 @@ export function Recommend({ videos }: { videos: Video[] }) {
             if (event.target === event.currentTarget) closeStory();
           }}
         >
-          <div className="story-dialog-content" ref={panel} tabIndex={-1}>
+          <div
+            className="story-dialog-content"
+            ref={panel}
+            tabIndex={-1}
+            autoFocus
+          >
             <StoryPanel video={current} onClose={closeStory} />
           </div>
         </dialog>

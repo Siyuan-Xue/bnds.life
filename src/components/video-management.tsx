@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import type { Video } from "~/lib/videos";
 import { api } from "~/trpc/react";
+import { isHomeVideo } from "~/lib/video-sections";
+import styles from "./video-management.module.css";
 
 export function VideoManagement({ video }: { video: Video }) {
   const viewer = api.discussion.viewer.useQuery();
@@ -42,12 +44,37 @@ function ManagementDialog({
   const [leaving, setLeaving] = useState(false);
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
+  const [isFeatured, setIsFeatured] = useState(video.isFeatured === true);
+  const [featuredMessage, setFeaturedMessage] = useState("");
   const update = api.video.update.useMutation();
   const offline = api.video.offline.useMutation();
-  const busy = offline.isPending || update.isPending || leaving;
+  const feature = api.video.setFeatured.useMutation();
+  const busy =
+    offline.isPending || update.isPending || feature.isPending || leaving;
   useEffect(() => {
     dialog.current?.showModal();
   }, []);
+  async function toggleFeatured() {
+    if (busy) return;
+    setError("");
+    setFeaturedMessage("");
+    try {
+      const result = await feature.mutateAsync({
+        id: video.id,
+        isFeatured: !isFeatured,
+      });
+      setIsFeatured(result.isFeatured);
+      await utils.invalidate();
+      router.refresh();
+      setFeaturedMessage(
+        result.isFeatured ? "已加入首页精选" : "已从首页精选移除",
+      );
+    } catch (cause) {
+      setError(
+        cause instanceof Error ? cause.message : "精选设置失败，请重试。",
+      );
+    }
+  }
   async function save(event: FormEvent) {
     event.preventDefault();
     if (busy) return;
@@ -138,6 +165,30 @@ function ManagementDialog({
           </button>
         </div>
       </form>
+      {isHomeVideo(video) && (
+        <div className={styles.featured}>
+          <div>
+            <h3>首页精选</h3>
+            <p role="status">
+              {featuredMessage ||
+                (isFeatured
+                  ? "已在首页精选中展示"
+                  : "将这个视频展示在首页顶部")}
+            </p>
+          </div>
+          <button
+            className="text-button"
+            disabled={busy}
+            onClick={() => void toggleFeatured()}
+          >
+            {feature.isPending
+              ? "保存中…"
+              : isFeatured
+                ? "移出精选"
+                : "加入精选"}
+          </button>
+        </div>
+      )}
       <div className="management-delete">
         {!confirmOffline ? (
           <button

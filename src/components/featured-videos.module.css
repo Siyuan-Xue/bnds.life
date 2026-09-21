@@ -1,0 +1,26 @@
+.section {
+  margin-bottom: 32px;
+}
+.section h2 {
+  margin: 0 0 16px;
+  font-size: 20px;
+  font-weight: 700;
+}
+.strip {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: clamp(220px, 24vw, 360px);
+  gap: 20px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  scroll-snap-type: x proximity;
+}
+.strip > article {
+  min-width: 0;
+  scroll-snap-align: start;
+}
+.empty {
+  margin: 0;
+  color: #606060;
+  font-size: 14px;
+}

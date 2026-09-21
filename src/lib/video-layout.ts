@@ -16,18 +16,25 @@ export function videoAspectRatio(
   return Number.isFinite(ratio) && ratio > 0 ? ratio : undefined;
 }
 
-export function recommendationAspectRatio(
-  ratio: number | undefined,
-  sidePanelOpen = false,
-): number {
-  if (
-    sidePanelOpen ||
-    ratio === undefined ||
-    !Number.isFinite(ratio) ||
-    ratio <= 0
-  )
+export function recommendationAspectRatio(ratio: number | undefined): number {
+  if (ratio === undefined || !Number.isFinite(ratio) || ratio <= 0)
     return 9 / 16;
-  return Math.min(1, Math.max(9 / 16, ratio));
+  return Math.min(16 / 9, Math.max(9 / 16, ratio));
+}
+
+export function recommendationResizeScrollTop(
+  activeIndex: number,
+  previousHeight: number | undefined,
+  height: number,
+): number | undefined {
+  if (
+    previousHeight === undefined ||
+    previousHeight === height ||
+    !Number.isFinite(height) ||
+    height <= 0
+  )
+    return undefined;
+  return activeIndex * height;
 }
 
 export function watchColumnAspectRatio(ratio: number): number {

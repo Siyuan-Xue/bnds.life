@@ -9,6 +9,7 @@ import {
   type Video,
 } from "~/lib/videos";
 import { publicVideo, orderRecommendations } from "~/lib/media-catalog";
+import { isHomeVideo, isShortVideo } from "~/lib/video-sections";
 
 export async function listVideos(query = ""): Promise<Video[]> {
   if (env.VIDEO_CATALOG_MODE === "demo") return demoList(query);
@@ -51,7 +52,15 @@ export async function findVideo(id: string): Promise<Video | undefined> {
   return (await listVideos()).find((video) => video.id === id);
 }
 
+export async function listHomeVideos(query = ""): Promise<Video[]> {
+  return (await listVideos(query)).filter(isHomeVideo);
+}
+
 export async function recommendVideos(startId?: string): Promise<Video[]> {
-  if (env.VIDEO_CATALOG_MODE === "demo") return demoRecommend(startId);
-  return orderRecommendations(await listVideos(), startId);
+  if (env.VIDEO_CATALOG_MODE === "demo")
+    return demoRecommend(startId).filter(isShortVideo);
+  return orderRecommendations(
+    (await listVideos()).filter(isShortVideo),
+    startId,
+  );
 }

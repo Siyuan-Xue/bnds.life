@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import * as videoLayout from "../src/lib/video-layout.ts";
 import {
   videoAspectRatio,
   recommendationAspectRatio,
@@ -45,18 +46,29 @@ test("使用媒体原始宽高，未加载或无效元数据不产生错误比�
     );
 });
 
-test("推荐页允许中间竖屏比例，横屏最多使用方形框，未知或极窄视频使用竖屏框", () => {
+test("短拍在 9:16 至 16:9 之间使用原始比例，超宽或极窄视频保留黑边", () => {
   for (const [ratio, expected] of [
     [9 / 16, 9 / 16],
     [3 / 4, 3 / 4],
     [1, 1],
-    [4 / 3, 1],
-    [16 / 9, 1],
-    [64 / 27, 1],
+    [4 / 3, 4 / 3],
+    [16 / 9, 16 / 9],
+    [64 / 27, 16 / 9],
     [3 / 8, 9 / 16],
+    [9 / 16 + 0.001, 9 / 16 + 0.001],
+    [16 / 9 - 0.001, 16 / 9 - 0.001],
+  ])
+    assert.equal(recommendationAspectRatio(ratio), expected);
+});
+
+test("短拍在媒体元数据尚未加载或无效时使用稳定的竖屏框", () => {
+  for (const [ratio, expected] of [
     [undefined, 9 / 16],
     [NaN, 9 / 16],
     [0, 9 / 16],
+    [-1, 9 / 16],
+    [Infinity, 9 / 16],
+    [-Infinity, 9 / 16],
   ])
     assert.equal(recommendationAspectRatio(ratio), expected);
 });
@@ -74,13 +86,39 @@ test("观看页横屏列宽跟随比例，方形和竖屏保留信息列宽", ()
   }
 });
 
-test("电脑故事侧面板恢复 9:16，手机版覆盖弹窗保留媒体适配比例", () => {
+test("故事面板状态不会改变短拍媒体的适配比例", () => {
   for (const [sourceRatio, normalRatio] of [
+    [9 / 16, 9 / 16],
     [1, 1],
     [3 / 4, 3 / 4],
-    [16 / 9, 1],
+    [4 / 3, 4 / 3],
+    [16 / 9, 16 / 9],
+    [64 / 27, 16 / 9],
   ]) {
-    assert.equal(recommendationAspectRatio(sourceRatio, true), 9 / 16);
+    assert.equal(recommendationAspectRatio(sourceRatio, true), normalRatio);
     assert.equal(recommendationAspectRatio(sourceRatio, false), normalRatio);
+  }
+});
+
+test("短拍切换每屏高度时保留当前视频并按新高度重新对齐", () => {
+  assert.equal(typeof videoLayout.recommendationResizeScrollTop, "function");
+  assert.equal(videoLayout.recommendationResizeScrollTop(2, 688, 788), 1576);
+  assert.equal(videoLayout.recommendationResizeScrollTop(2, 788, 688), 1376);
+  assert.equal(videoLayout.recommendationResizeScrollTop(0, 688, 788), 0);
+});
+
+test("初始测量、宽度改变或无效高度不能中断用户滚动", () => {
+  assert.equal(typeof videoLayout.recommendationResizeScrollTop, "function");
+  for (const [previousHeight, height] of [
+    [undefined, 788],
+    [788, 788],
+    [688, 0],
+    [688, NaN],
+    [688, Infinity],
+  ]) {
+    assert.equal(
+      videoLayout.recommendationResizeScrollTop(2, previousHeight, height),
+      undefined,
+    );
   }
 });

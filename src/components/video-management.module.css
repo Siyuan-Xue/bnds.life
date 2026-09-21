@@ -1,0 +1,22 @@
+.featured {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid #e5e5e5;
+}
+.featured h3 {
+  margin: 0;
+  font-size: 16px;
+}
+.featured p {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: #606060;
+}
+.featured button {
+  flex-shrink: 0;
+}

@@ -10,6 +10,7 @@ try {
         "003-community",
         "004-video-deletion",
         "005-single-story",
+        "006-featured-videos",
       ])
         await connection.unsafe(
           await readFile(

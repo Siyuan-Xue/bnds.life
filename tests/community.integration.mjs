@@ -26,6 +26,7 @@ test("账户与讨论：权限、身份伪造、回复、故事、日期及删�
       "003-community",
       "004-video-deletion",
       "005-single-story",
+      "006-featured-videos",
     ])
       await sql.unsafe(
         await readFile(

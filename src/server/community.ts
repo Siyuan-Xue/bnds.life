@@ -5,11 +5,14 @@ import { z } from "zod";
 import type { db as database } from "./db/index";
 import {
   mediaVideos,
+  videoAssets,
   user,
   videoComments,
   videoDeletionJobs,
 } from "./db/schema.ts";
 import { normalizeRecordedDate } from "../lib/recorded-date.ts";
+import { publicVideo } from "../lib/media-catalog.ts";
+import { isHomeVideo } from "../lib/video-sections.ts";
 
 export const commentInput = z.object({
   videoId: z.string().uuid(),
@@ -38,6 +41,10 @@ export const updateInput = z.object({
       (v) => v === null || !!normalizeRecordedDate(v),
       "请输入有效的拍摄日期",
     ),
+});
+export const featuredInput = z.object({
+  id: z.string().uuid(),
+  isFeatured: z.boolean(),
 });
 const bad = (message: string) =>
   new TRPCError({ code: "BAD_REQUEST", message });
@@ -309,6 +316,48 @@ export function createCommunity(db: typeof database) {
           message: "视频不存在或已下线",
         });
       return row;
+    },
+    async setFeatured(
+      userId: string | null | undefined,
+      raw: z.infer<typeof featuredInput>,
+    ) {
+      await official(userId);
+      const parsed = featuredInput.safeParse(raw);
+      if (!parsed.success) throw bad("请检查视频和精选状态");
+      const input = parsed.data;
+      return db.transaction(async (tx) => {
+        // Share the offline operation's row lock so a waiting feature request
+        // rechecks the latest publication state before making a change.
+        const [row] = await tx
+          .select()
+          .from(mediaVideos)
+          .where(
+            and(
+              eq(mediaVideos.id, input.id),
+              eq(mediaVideos.status, "published"),
+            ),
+          )
+          .for("update");
+        if (!row)
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "视频不存在或已下线",
+          });
+        if (input.isFeatured) {
+          const assets = await tx
+            .select()
+            .from(videoAssets)
+            .where(eq(videoAssets.videoId, input.id));
+          const video = publicVideo(row, assets);
+          if (!video || !isHomeVideo(video))
+            throw bad("仅超过 60 秒的已发布视频可以加入首页精选");
+        }
+        await tx
+          .update(mediaVideos)
+          .set({ isFeatured: input.isFeatured, updatedAt: new Date() })
+          .where(eq(mediaVideos.id, input.id));
+        return { isFeatured: input.isFeatured };
+      });
     },
     async offline(userId: string | null | undefined, id: string) {
       const actor = await official(userId);

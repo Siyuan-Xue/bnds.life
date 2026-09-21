@@ -7,7 +7,7 @@
 - Better Auth 管理 user、account、session；密码仅以框架生成的哈希存储。
 - video_comments 保存视频、用户、根评论、正文和时间。回复始终指向同视频的根评论，支持对回复继续回复；普通根评论及回复每页 20 条。
 - 每个视频只有一段故事（is_story=true，数据库部分唯一索引约束），由官方账户添加或编辑。普通用户只读故事，不能回复故事；官方账户不能发表评论或回复。故事与评论在前端分区显示。迁移 005 合并历史官方根评论、保留已有回复，并迁移旧 videos.story。
-- 视频修改只接受名称和有效拍摄日期（年、年月、年月日或清空）。
+- 视频信息修改只接受名称和有效拍摄日期（年、年月、年月日或清空）。独立的 `video.setFeatured` 接口由服务端验证 official 身份，只能将超过 60 秒的已发布视频加入首页精选。
 - 每个账户发表评论至少间隔 5 秒，数据库行锁防止并发绕过。
 
 ## 首次部署
@@ -26,3 +26,7 @@
 故事与评论拆分为独立区域；官方只可添加一段故事或编辑原故事，普通用户只读故事并可发表多条评论。管理视频入口移动到视频信息区。删除改为下线，按七天保留期和每日北京时间 03:00 定时清理。
 
 验证包含 27 项服务器单元测试、4 个隔离数据库集成测试、ESLint/TypeScript、生产构建，以及隔离站点官方故事创建/编辑、管理下线确认、电脑侧面板与手机底部抽屉。历史下线任务的墓碑不能提前清理保留期内的上传副本。
+
+## Featured migration (2026-09-21)
+
+`006-featured-videos.sql` adds `is_featured`, default false. After a database backup, run `node --env-file=/srv/bnds-life/shared/.env scripts/migrate-featured.mjs`. It only adds the column, uses a two-second lock timeout and does not acquire the uploader's media advisory lock. The full `migrate-community.mjs` also includes 006. Keep the existing `media-tools` release during active uploads; old imports use the column default.
