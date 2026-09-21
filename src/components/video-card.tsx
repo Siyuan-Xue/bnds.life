@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { formatDuration, type Video } from "~/lib/videos";
+import { VideoDate } from "./video-date";
 
 export function VideoCard({
   video,
@@ -38,11 +39,7 @@ export function VideoCard({
             </Link>
           </Heading>
           <p>
-            {video.recordedAt ? (
-              <time dateTime={video.recordedAt}>{video.recordedAt}</time>
-            ) : (
-              "日期待补充"
-            )}
+            <VideoDate video={video} />
           </p>
         </div>
       </div>

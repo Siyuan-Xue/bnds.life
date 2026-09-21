@@ -16,6 +16,7 @@ import { Story } from "./story";
 import { Discussion } from "./discussion";
 import { VideoManagement } from "./video-management";
 import { VideoCard } from "./video-card";
+import { VideoDate } from "./video-date";
 
 export function Watch({ video, related }: { video: Video; related: Video[] }) {
   const mainRef = useRef<HTMLDivElement>(null);
@@ -90,11 +91,7 @@ export function Watch({ video, related }: { video: Video; related: Video[] }) {
           <div className="watch-heading">
             <h1>{video.title}</h1>
             <p className="watch-date">
-              {video.recordedAt ? (
-                <time dateTime={video.recordedAt}>{video.recordedAt}</time>
-              ) : (
-                "日期待补充"
-              )}
+              <VideoDate video={video} />
             </p>
           </div>
           <VideoManagement key={`manage-${video.id}`} video={video} />

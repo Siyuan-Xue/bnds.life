@@ -15,3 +15,17 @@ export function normalizeRecordedDate(value: unknown): string | undefined {
     ? value
     : undefined;
 }
+
+/** Filename clocks are local shooting times, not UTC timestamps. */
+export function recordedTimeFromFilename(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const match =
+    /^(\d{4}-\d{2}-\d{2})[ _](\d{2})(\d{2})(\d{2})(?:\s*\(\d+\))*(?:\.[a-z0-9]+)?$/i.exec(
+      value,
+    );
+  if (!match || !normalizeRecordedDate(match[1])) return undefined;
+  const [, , hour, minute, second] = match;
+  if (Number(hour) > 23 || Number(minute) > 59 || Number(second) > 59)
+    return undefined;
+  return `${hour}:${minute}`;
+}

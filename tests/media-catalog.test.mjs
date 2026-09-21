@@ -131,3 +131,71 @@ test("精选只公开已发布的首页视频，隐藏或短拍的精选标记�
     undefined,
   );
 });
+
+test("副标题从原文件名提取分钟，重命名标题和管理员修改日期不丢失时间", () => {
+  const assets = playableAssets(65000, 65000);
+  assets[0].originalFilename = "2023-07-14 155459.mov";
+  const video = publicVideo(
+    { ...published, title: "暑假的一天", recordedDate: "2023-07-15" },
+    assets,
+  );
+  assert.equal(video.recordedAt, "2023-07-15");
+  assert.equal(video.recordedTime, "15:54");
+  assert.equal("originalFilename" in video, false);
+  assets[0].originalFilename = "2023-07-14 000001.MOV";
+  assert.equal(
+    publicVideo({ ...published, recordedDate: "2023-07-14" }, assets)
+      .recordedTime,
+    "00:00",
+  );
+});
+
+test("没有可靠文件名时间或完整拍摄日期时不生成虚构时间", () => {
+  for (const filename of [
+    null,
+    undefined,
+    "video.mov",
+    "2023-02-29 155400.mov",
+    "2023-07-14 245400.mov",
+    "2023-07-14 156000.mov",
+    "2023-07-14 155460.mov",
+  ]) {
+    const assets = playableAssets(65000, 65000);
+    assets[0].originalFilename = filename;
+    assert.equal(
+      publicVideo(
+        {
+          ...published,
+          title: "2023-07-14 155400",
+          recordedDate: "2023-07-14",
+        },
+        assets,
+      ).recordedTime,
+      undefined,
+    );
+  }
+  for (const date of [null, "2023", "2023-07"]) {
+    const assets = playableAssets(65000, 65000);
+    assets[0].originalFilename = "2023-07-14 155400.mov";
+    assert.equal(
+      publicVideo({ ...published, recordedDate: date }, assets).recordedTime,
+      undefined,
+    );
+  }
+});
+
+test("下载重名添加的括号后缀不会丢失拍摄时间", () => {
+  for (const filename of [
+    "2023-07-15 183305(1).mov",
+    "2023-07-15 183305(1)(1).mov",
+    "2023-07-15 183305 (6).MOV",
+  ]) {
+    const assets = playableAssets(65000, 65000);
+    assets[0].originalFilename = filename;
+    assert.equal(
+      publicVideo({ ...published, recordedDate: "2023-07-15" }, assets)
+        .recordedTime,
+      "18:33",
+    );
+  }
+});

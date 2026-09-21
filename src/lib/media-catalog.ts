@@ -1,5 +1,8 @@
 import type { Video } from "./videos";
-import { normalizeRecordedDate } from "./recorded-date.ts";
+import {
+  normalizeRecordedDate,
+  recordedTimeFromFilename,
+} from "./recorded-date.ts";
 import { isHomeVideo } from "./video-sections.ts";
 
 type CatalogRow = {
@@ -13,6 +16,7 @@ type CatalogRow = {
 type AssetRow = {
   kind: string;
   objectKey: string;
+  originalFilename?: string | null;
   durationMs?: number | null;
   metadata?: unknown;
 };
@@ -46,6 +50,12 @@ export function publicVideo(
   )
     return undefined;
   const recordedAt = normalizeRecordedDate(row.recordedDate);
+  const recordedTime =
+    recordedAt?.length === 10
+      ? recordedTimeFromFilename(
+          assets.find((a) => a.kind === "original")?.originalFilename,
+        )
+      : undefined;
   const duration = durationMs / 1000;
   const native = assets.find((a) => a.kind === "native");
   const contentType =
@@ -72,6 +82,7 @@ export function publicVideo(
     poster: `/media/${poster.objectKey}`,
     ...(row.story ? { story: row.story } : {}),
     ...(recordedAt ? { recordedAt } : {}),
+    ...(recordedTime ? { recordedTime } : {}),
     ...(row.isFeatured && isHomeVideo({ duration })
       ? { isFeatured: true }
       : {}),

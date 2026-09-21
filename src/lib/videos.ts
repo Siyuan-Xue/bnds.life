@@ -7,6 +7,7 @@ export type Video = {
   poster: string;
   story?: string;
   recordedAt?: string;
+  recordedTime?: string;
   isDemo?: boolean;
   isFeatured?: boolean;
 };

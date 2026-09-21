@@ -96,7 +96,7 @@ export function FeaturedVideos({ videos }: { videos: Video[] }) {
           group.getBoundingClientRect().width +
           parseFloat(getComputedStyle(strip).columnGap);
         if (cycle > 0) {
-          position = (position + elapsed * 0.024) % cycle;
+          position = (position + elapsed * 0.036) % cycle;
           strip.scrollLeft = position;
         }
       }

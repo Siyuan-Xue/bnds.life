@@ -23,6 +23,7 @@ export async function listVideos(query = ""): Promise<Video[]> {
     .select({
       videoId: videoAssets.videoId,
       kind: videoAssets.kind,
+      originalFilename: videoAssets.originalFilename,
       objectKey: videoAssets.objectKey,
       durationMs: videoAssets.durationMs,
       metadata: videoAssets.metadata,
