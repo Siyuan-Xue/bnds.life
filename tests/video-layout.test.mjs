@@ -86,7 +86,7 @@ test("观看页横屏列宽跟随比例，方形和竖屏保留信息列宽", ()
   }
 });
 
-test("故事面板状态不会改变短拍媒体的适配比例", () => {
+test("电脑展开故事统一为9:16，关闭后恢复原画幅适配", () => {
   for (const [sourceRatio, normalRatio] of [
     [9 / 16, 9 / 16],
     [1, 1],
@@ -95,7 +95,7 @@ test("故事面板状态不会改变短拍媒体的适配比例", () => {
     [16 / 9, 16 / 9],
     [64 / 27, 16 / 9],
   ]) {
-    assert.equal(recommendationAspectRatio(sourceRatio, true), normalRatio);
+    assert.equal(recommendationAspectRatio(sourceRatio, true), 9 / 16);
     assert.equal(recommendationAspectRatio(sourceRatio, false), normalRatio);
   }
 });

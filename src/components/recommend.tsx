@@ -182,7 +182,10 @@ export function Recommend({ videos }: { videos: Video[] }) {
         aria-label="短拍视频列表"
       >
         {videos.map((video, index) => {
-          const ratio = recommendationAspectRatio(ratios[video.source]);
+          const ratio = recommendationAspectRatio(
+            ratios[video.source],
+            sidePanelOpen,
+          );
           return (
             <article
               key={video.id}

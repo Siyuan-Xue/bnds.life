@@ -624,7 +624,7 @@ p {
 }
 .recommend-layout {
   --feed-height: max(0px, calc(100dvh - 96px));
-  --feed-story-width: clamp(240px, 26vw, 420px);
+  --feed-story-width: min(33vw, 480px);
   --feed-story-player-space: 96px;
   --feed-navigation-size: 56px;
   --feed-navigation-inset: 24px;
@@ -796,7 +796,7 @@ p {
   background: #e5e5e5;
 }
 .feed-story {
-  /* Top and outer height follow the rendered active frame, at any media ratio. */
+  /* Match the uniform portrait frame; dimensions are independent of the clip. */
   position: absolute;
   right: var(--feed-end-space);
   width: var(--feed-story-width);
