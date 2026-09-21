@@ -1,0 +1,23 @@
+[Unit]
+Description=BNDS.life scheduled offline media cleanup
+After=network.target postgresql.service
+
+[Service]
+Type=oneshot
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/srv/bnds-life/media-tools
+Environment=MEDIA_CLEANUP_RETENTION_DAYS=7
+EnvironmentFile=/srv/bnds-life/shared/.env
+ExecStart=/usr/bin/env MEDIA_ROOT=/srv/bnds-life/media /usr/local/bin/node /srv/bnds-life/media-tools/scripts/media-delete-worker.mjs --once
+TimeoutStartSec=infinity
+TimeoutStopSec=30
+KillSignal=SIGTERM
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/srv/bnds-life/media
+CapabilityBoundingSet=
+RestrictSUIDSGID=true
+UMask=0077

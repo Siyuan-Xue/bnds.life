@@ -151,48 +151,109 @@ export async function deleteVideoFiles(root, id, sourceSha256) {
   return { incomingRemoved: await removeDeletedIncoming(root, [sourceSha256]) };
 }
 
-export async function processDeletionJobs(sql, root, { sweep = true } = {}) {
+export function cleanupCutoff(retentionDays = 7, now = new Date()) {
+  if (
+    !Number.isInteger(retentionDays) ||
+    retentionDays < 0 ||
+    retentionDays > 36500
+  )
+    throw new Error("MEDIA_CLEANUP_RETENTION_DAYS 必须是 0–36500 的整数");
+  const timestamp = new Date(now).getTime();
+  if (!Number.isFinite(timestamp)) throw new Error("无效的清理时间");
+  return new Date(timestamp - retentionDays * 24 * 60 * 60 * 1000);
+}
+
+async function cleanupCandidate(conn, id, cutoff) {
+  // Use the same lock ordering as offline/publish: video first, then job.
+  const [candidate] =
+    await conn`SELECT video_id FROM video_deletion_jobs WHERE id=${id}`;
+  if (!candidate) return null;
+  const [video] =
+    await conn`SELECT id,status,source_sha256 FROM videos WHERE id=${candidate.video_id} FOR UPDATE`;
+  const [job] =
+    await conn`SELECT * FROM video_deletion_jobs WHERE id=${id} FOR UPDATE`;
+  if (
+    !video ||
+    video.status !== "hidden" ||
+    !job ||
+    !["pending", "running", "failed"].includes(job.status) ||
+    (job.status !== "running" && new Date(job.created_at) > cutoff)
+  )
+    return null;
+  if (job.video_id !== video.id || video.source_sha256 !== job.source_sha256)
+    throw new Error("清理任务原片哈希与视频不一致，保留所有文件");
+  if (!uuidPattern.test(job.video_id) || !shaPattern.test(job.source_sha256))
+    throw new Error("无效的清理任务");
+  return job;
+}
+
+export async function processDeletionJobs(
+  sql,
+  root,
+  { sweep = true, retentionDays = 7, now = new Date() } = {},
+) {
+  const cutoff = cleanupCutoff(retentionDays, now);
   try {
     return await withMediaLock(sql, async (conn) => {
       const jobs =
-        await conn`SELECT * FROM video_deletion_jobs WHERE status IN ('pending','running') ORDER BY created_at,id`;
+        await conn`SELECT j.id FROM video_deletion_jobs j JOIN videos v ON v.id=j.video_id
+        WHERE v.status='hidden' AND j.status IN ('pending','running','failed')
+        AND (j.status='running' OR j.created_at<=${cutoff}) ORDER BY j.created_at,j.id`;
       const results = [];
-      for (const job of jobs) {
+      for (const candidate of jobs) {
         try {
+          // Persist the irreversible cleanup marker before touching files so a
+          // crash cannot allow a partially cleaned source to be imported again.
           await conn`BEGIN`;
+          let job;
           try {
-            await conn`INSERT INTO deleted_video_sources (source_sha256) VALUES (${job.source_sha256}) ON CONFLICT DO NOTHING`;
-            await conn`UPDATE videos SET status='hidden',updated_at=now() WHERE id=${job.video_id}`;
-            await conn`UPDATE video_deletion_jobs SET status='running',error=NULL,updated_at=now() WHERE id=${job.id}`;
+            job = await cleanupCandidate(conn, candidate.id, cutoff);
+            if (job) {
+              await conn`INSERT INTO deleted_video_sources (source_sha256) VALUES (${job.source_sha256}) ON CONFLICT DO NOTHING`;
+              await conn`UPDATE video_deletion_jobs SET status='running',error=NULL,updated_at=now() WHERE id=${job.id}`;
+            }
             await conn`COMMIT`;
           } catch (error) {
             await conn`ROLLBACK`;
             throw error;
           }
-          const files = await deleteVideoFiles(
-            root,
-            job.video_id,
-            job.source_sha256,
-          );
+          if (!job) continue;
+          // Recheck after acquiring the row lock again, and hold it throughout
+          // physical cleanup. Publication can never race the filesystem writes.
           await conn`BEGIN`;
+          let files;
           try {
-            await conn`DELETE FROM videos WHERE id=${job.video_id}`;
-            await conn`UPDATE video_deletion_jobs SET status='complete',error=NULL,updated_at=now() WHERE id=${job.id}`;
+            job = await cleanupCandidate(conn, candidate.id, cutoff);
+            if (job) {
+              files = await deleteVideoFiles(
+                root,
+                job.video_id,
+                job.source_sha256,
+              );
+              await conn`DELETE FROM videos WHERE id=${job.video_id}`;
+              await conn`UPDATE video_deletion_jobs SET status='complete',error=NULL,updated_at=now() WHERE id=${job.id}`;
+            }
             await conn`COMMIT`;
           } catch (error) {
             await conn`ROLLBACK`;
             throw error;
           }
-          results.push({ id: job.id, status: "complete", ...files });
+          if (job) results.push({ id: job.id, status: "complete", ...files });
         } catch (error) {
-          await conn`UPDATE video_deletion_jobs SET status='failed',error=${String(error.message).slice(0, 2000)},updated_at=now() WHERE id=${job.id}`;
-          results.push({ id: job.id, status: "failed", error: error.message });
+          await conn`UPDATE video_deletion_jobs SET status='failed',error=${String(error.message).slice(0, 2000)},updated_at=now() WHERE id=${candidate.id}`;
+          results.push({
+            id: candidate.id,
+            status: "failed",
+            error: error.message,
+          });
         }
       }
-      // Uploads may finish after the deletion job. Persistent tombstones also
-      // clean those exact copies, including complete .uploading files.
+      // Daily cleanup also removes uploads arriving after an earlier physical
+      // cleanup. Any surviving video row protects incoming copies, including
+      // legacy tombstones created before the offline retention policy.
       const tombstones =
-        await conn`SELECT source_sha256 FROM deleted_video_sources`;
+        await conn`SELECT d.source_sha256 FROM deleted_video_sources d
+        WHERE NOT EXISTS (SELECT 1 FROM videos v WHERE v.source_sha256=d.source_sha256)`;
       let incomingRemoved = 0;
       let sweepError;
       try {
@@ -206,6 +267,7 @@ export async function processDeletionJobs(sql, root, { sweep = true } = {}) {
       }
       return {
         busy: false,
+        cutoff: cutoff.toISOString(),
         jobs: results,
         incomingRemoved,
         ...(sweepError ? { sweepError } : {}),

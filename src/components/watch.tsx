@@ -13,6 +13,8 @@ import {
 } from "~/lib/video-layout";
 import { Player } from "./player";
 import { Story } from "./story";
+import { Discussion } from "./discussion";
+import { VideoManagement } from "./video-management";
 import { VideoCard } from "./video-card";
 
 export function Watch({ video, related }: { video: Video; related: Video[] }) {
@@ -95,7 +97,13 @@ export function Watch({ video, related }: { video: Video; related: Video[] }) {
               )}
             </p>
           </div>
+          <VideoManagement key={`manage-${video.id}`} video={video} />
           <Story video={video} />
+          <Discussion
+            key={`comments-${video.id}`}
+            videoId={video.id}
+            demo={video.isDemo === true || video.id.startsWith("memory-")}
+          />
         </section>
       </div>
       <aside className="related-videos" aria-label="更多视频" ref={relatedRef}>

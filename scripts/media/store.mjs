@@ -113,18 +113,22 @@ export async function importVideo(sql, options) {
   }
   return withMediaLock(sql, async (conn) => {
     const sourceSha256 = await hashFile(file);
+    const [existing] =
+      await conn`SELECT id,status FROM videos WHERE source_sha256=${sourceSha256}`;
     const [deleted] =
       await conn`SELECT source_sha256 FROM deleted_video_sources WHERE source_sha256=${sourceSha256}`;
     if (deleted) {
-      // Only the incoming server copies may be consumed; local input is retained.
-      const { removeDeletedIncoming } = await import("./deletion.mjs");
-      await removeDeletedIncoming(root, [sourceSha256]).catch(() => {});
-      const error = new Error("原片已被永久删除，禁止重新导入");
+      // A surviving row protects all incoming copies during retention, including
+      // historical tombstones or partially failed cleanup. Only the scheduled
+      // cleanup job may resume removing those files.
+      if (!existing) {
+        const { removeDeletedIncoming } = await import("./deletion.mjs");
+        await removeDeletedIncoming(root, [sourceSha256]).catch(() => {});
+      }
+      const error = new Error("原片已进入永久清理流程，禁止重新导入");
       error.code = "VIDEO_SOURCE_DELETED";
       throw error;
     }
-    const [existing] =
-      await conn`SELECT id,status FROM videos WHERE source_sha256=${sourceSha256}`;
     if (existing)
       return {
         ...existing,

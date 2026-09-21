@@ -1495,3 +1495,11 @@ summary:focus-visible {
 .deletion-task-list .form-error {
   margin-top: 8px;
 }
+
+.story-text { white-space: pre-wrap; }
+.story-edit-button { margin-top: 10px; font-size: 14px; }
+.watch-details > .video-management { margin-top: 8px; margin-bottom: 0; }
+.feed-caption .video-management { pointer-events: auto; margin: 4px 0 0; }
+.feed-caption .video-management > .text-button { color: white; padding: 2px 0; }
+.watch-details > .discussion h3 { font-size: 18px; font-weight: 600; margin-bottom: 16px; }
+.feed-caption .management-dialog { text-shadow: none; }

@@ -123,3 +123,19 @@ test("refuses symlinked storage parent without touching external files", async (
     await rm(temp, { recursive: true, force: true });
   }
 });
+
+test("cleanup retention defaults to seven complete days and rejects unsafe configuration", async () => {
+  const { cleanupCutoff } = await import("../scripts/media/deletion.mjs");
+  const now = new Date("2026-09-21T19:00:00.000Z");
+  assert.equal(
+    cleanupCutoff(undefined, now).toISOString(),
+    "2026-09-14T19:00:00.000Z",
+  );
+  assert.equal(cleanupCutoff(0, now).toISOString(), now.toISOString());
+  assert.equal(
+    cleanupCutoff(30, now).toISOString(),
+    "2026-08-22T19:00:00.000Z",
+  );
+  for (const days of [-1, 1.5, NaN, Infinity, "0", 36501])
+    assert.throws(() => cleanupCutoff(days, now), /RETENTION/);
+});

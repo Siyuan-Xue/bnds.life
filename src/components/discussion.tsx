@@ -25,9 +25,8 @@ export function CommentComposer({
 }) {
   const session = authClient.useSession();
   const viewer = api.discussion.viewer.useQuery(undefined, {
-    enabled: Boolean(session.data) && !parentId && !demo,
+    enabled: Boolean(session.data) && !demo,
   });
-  const officialStory = !parentId && viewer.data?.isOfficial;
   const pathname = usePathname();
   const utils = api.useUtils();
   const [body, setBody] = useState("");
@@ -47,6 +46,8 @@ export function CommentComposer({
       setError(cause instanceof Error ? cause.message : "发布失败，请重试。");
     }
   }
+  if (session.data && (viewer.isPending || viewer.data?.isOfficial))
+    return null;
   if (!demo && !session.data)
     return (
       <p className="comment-login">
@@ -72,13 +73,7 @@ export function CommentComposer({
           value={body}
           onFocus={() => setTouched(true)}
           onChange={(event) => setBody(event.target.value)}
-          placeholder={
-            replyTo
-              ? `回复 ${replyTo}…`
-              : officialStory
-                ? "写下这段回忆的故事…"
-                : "写下你的回忆…"
-          }
+          placeholder={replyTo ? `回复 ${replyTo}…` : "写下你的回忆…"}
           maxLength={5000}
           rows={2}
           readOnly={demo}
@@ -105,13 +100,7 @@ export function CommentComposer({
           type="submit"
           disabled={demo || !body.trim() || add.isPending}
         >
-          {add.isPending
-            ? "发布中…"
-            : parentId
-              ? "回复"
-              : officialStory
-                ? "发布故事"
-                : "发布"}
+          {add.isPending ? "发布中…" : parentId ? "回复" : "发布"}
         </button>
       </div>
     </form>
@@ -125,6 +114,7 @@ function EntryContent({
   entry: Entry;
   onReply: () => void;
 }) {
+  const viewer = api.discussion.viewer.useQuery();
   return (
     <>
       <div className="comment-meta">
@@ -135,9 +125,11 @@ function EntryContent({
         <time dateTime={entry.createdAt}>{entry.createdAt.slice(0, 10)}</time>
       </div>
       <p className="comment-text">{entry.body}</p>
-      <button className="comment-reply" onClick={onReply}>
-        回复
-      </button>
+      {!viewer.isPending && !viewer.data?.isOfficial && (
+        <button className="comment-reply" onClick={onReply}>
+          回复
+        </button>
+      )}
     </>
   );
 }

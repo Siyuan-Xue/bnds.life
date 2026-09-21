@@ -4,8 +4,18 @@ import {
   publicProcedure,
   protectedProcedure,
 } from "~/server/api/trpc";
-import { createCommunity, listInput, commentInput } from "~/server/community";
+import {
+  createCommunity,
+  listInput,
+  commentInput,
+  storyInput,
+} from "~/server/community";
 export const discussionRouter = createTRPCRouter({
+  saveStory: protectedProcedure
+    .input(storyInput)
+    .mutation(({ ctx, input }) =>
+      createCommunity(ctx.db).saveStory(ctx.session.user.id, input),
+    ),
   viewer: publicProcedure.query(({ ctx }) =>
     createCommunity(ctx.db).viewer(ctx.session?.user.id),
   ),

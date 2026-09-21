@@ -9,7 +9,8 @@ import {
   type CSSProperties,
 } from "react";
 import type { Video } from "~/lib/videos";
-import { Story } from "./story";
+import { StoryPanel } from "./story";
+import { VideoManagement } from "./video-management";
 import { Icon } from "./icon";
 import { Player } from "./player";
 import { isPlaybackShortcut } from "~/lib/shortcuts";
@@ -156,6 +157,9 @@ export function Recommend({ videos }: { videos: Video[] }) {
                     )}
                   </p>
                   <Link href={`/watch/${video.id}`}>{video.title}</Link>
+                  {index === active && (
+                    <VideoManagement key={video.id} video={video} />
+                  )}
                 </div>
                 <div className="feed-actions">
                   <button
@@ -193,7 +197,7 @@ export function Recommend({ videos }: { videos: Video[] }) {
       </div>
       {sidePanelOpen && (
         <div className="feed-story" ref={panel} aria-label="视频故事">
-          <Story video={current} onClose={closeStory} />
+          <StoryPanel video={current} onClose={closeStory} />
         </div>
       )}
       {storyOpen && mobile && (
@@ -210,7 +214,7 @@ export function Recommend({ videos }: { videos: Video[] }) {
           }}
         >
           <div className="story-dialog-content" ref={panel} tabIndex={-1}>
-            <Story video={current} onClose={closeStory} />
+            <StoryPanel video={current} onClose={closeStory} />
           </div>
         </dialog>
       )}

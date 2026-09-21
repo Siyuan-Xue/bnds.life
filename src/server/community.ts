@@ -4,7 +4,6 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import type { db as database } from "./db/index";
 import {
-  deletedVideoSources,
   mediaVideos,
   user,
   videoComments,
@@ -16,6 +15,11 @@ export const commentInput = z.object({
   videoId: z.string().uuid(),
   parentId: z.string().uuid().optional(),
   body: z.string().trim().min(1).max(5000),
+});
+export const storyInput = z.object({
+  videoId: z.string().uuid(),
+  id: z.string().uuid().optional(),
+  body: z.string().trim().min(1).max(100000),
 });
 export const listInput = z.object({
   videoId: z.string().max(100),
@@ -85,7 +89,10 @@ export function createCommunity(db: typeof database) {
           eq(mediaVideos.status, "published"),
           input.parentId
             ? eq(videoComments.parentId, input.parentId)
-            : and(isNull(videoComments.parentId), eq(user.isOfficial, stories)),
+            : and(
+                isNull(videoComments.parentId),
+                eq(videoComments.isStory, stories),
+              ),
           input.cursor
             ? or(
                 lt(videoComments.createdAt, new Date(input.cursor.createdAt)),
@@ -98,7 +105,7 @@ export function createCommunity(db: typeof database) {
         ),
       )
       .orderBy(desc(videoComments.createdAt), desc(videoComments.id))
-      .limit(stories ? 100 : 21);
+      .limit(stories ? 1 : 21);
     const more = !stories && rows.length > 20;
     const items = (more ? rows.slice(0, 20) : rows).map((row) => ({
       ...row,
@@ -114,7 +121,7 @@ export function createCommunity(db: typeof database) {
   return {
     viewer,
     list,
-    async deletions(userId: string | null | undefined) {
+    async offlineVideos(userId: string | null | undefined) {
       await official(userId);
       const jobs = await db
         .select()
@@ -130,16 +137,84 @@ export function createCommunity(db: typeof database) {
         title: job.videoTitle,
         status: job.status,
         error:
-          job.status === "failed" ? "文件清理未完成，请重试；视频已下线" : null,
+          job.status === "failed"
+            ? "资源尚未清理，下次定时任务将自动重试"
+            : null,
         createdAt: job.createdAt.toISOString(),
       }));
     },
     stories: async (videoId: string) => (await list({ videoId }, true)).items,
+    async saveStory(
+      userId: string | null | undefined,
+      raw: z.infer<typeof storyInput>,
+    ) {
+      const actor = await official(userId);
+      const parsed = storyInput.safeParse(raw);
+      if (!parsed.success) throw bad("故事需为 1–100000 个字符");
+      const input = parsed.data;
+      return db.transaction(async (tx) => {
+        const [video] = await tx
+          .select({ id: mediaVideos.id })
+          .from(mediaVideos)
+          .where(
+            and(
+              eq(mediaVideos.id, input.videoId),
+              eq(mediaVideos.status, "published"),
+            ),
+          )
+          .for("update");
+        if (!video)
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "视频不存在或已下线",
+          });
+        const [existing] = await tx
+          .select()
+          .from(videoComments)
+          .where(
+            and(
+              eq(videoComments.videoId, input.videoId),
+              eq(videoComments.isStory, true),
+            ),
+          );
+        if (existing) {
+          if (input.id !== existing.id)
+            throw new TRPCError({
+              code: "CONFLICT",
+              message: "这个视频已有故事，请编辑现有故事",
+            });
+          await tx
+            .update(videoComments)
+            .set({ body: input.body })
+            .where(eq(videoComments.id, existing.id));
+          return { id: existing.id };
+        }
+        if (input.id)
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "故事不存在，请刷新页面",
+          });
+        const id = randomUUID();
+        await tx.insert(videoComments).values({
+          id,
+          videoId: input.videoId,
+          userId: actor.id,
+          body: input.body,
+          isStory: true,
+        });
+        return { id };
+      });
+    },
     async add(
       userId: string | null | undefined,
       raw: z.infer<typeof commentInput>,
     ) {
       const actor = await member(userId);
+      if (actor.isOfficial)
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "官方账户只能编辑故事，不能发表评论或回复",
+        });
       const parsed = commentInput.safeParse(raw);
       if (!parsed.success) throw bad("评论需为 1–5000 个字符");
       const input = parsed.data;
@@ -177,6 +252,7 @@ export function createCommunity(db: typeof database) {
               ),
             );
           if (!parent) throw bad("回复的评论不属于该视频");
+          if (parent.isStory) throw bad("故事只供阅读，请在评论区发表评论");
           parentId = parent.parentId ?? parent.id;
         }
         const [last] = await tx
@@ -230,11 +306,11 @@ export function createCommunity(db: typeof database) {
       if (!row)
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: "视频不存在或正在删除",
+          message: "视频不存在或已下线",
         });
       return row;
     },
-    async remove(userId: string | null | undefined, id: string) {
+    async offline(userId: string | null | undefined, id: string) {
       const actor = await official(userId);
       return db.transaction(async (tx) => {
         const [video] = await tx
@@ -247,25 +323,30 @@ export function createCommunity(db: typeof database) {
           .from(videoDeletionJobs)
           .where(eq(videoDeletionJobs.videoId, id));
         if (existing) {
-          if (existing.status === "failed")
+          if (video?.status === "published") {
+            await tx
+              .update(mediaVideos)
+              .set({ status: "hidden", updatedAt: new Date() })
+              .where(eq(mediaVideos.id, id));
             await tx
               .update(videoDeletionJobs)
-              .set({ status: "pending", error: null, updatedAt: new Date() })
+              .set({
+                status: "pending",
+                error: null,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                videoTitle: video.title,
+              })
               .where(eq(videoDeletionJobs.id, existing.id));
+            return { jobId: existing.id, status: "pending" as const };
+          }
           return {
             jobId: existing.id,
-            status:
-              existing.status === "failed"
-                ? ("pending" as const)
-                : existing.status,
+            status: existing.status,
           };
         }
         if (!video)
           throw new TRPCError({ code: "NOT_FOUND", message: "视频不存在" });
-        await tx
-          .insert(deletedVideoSources)
-          .values({ sourceSha256: video.sourceSha256 })
-          .onConflictDoNothing();
         await tx
           .update(mediaVideos)
           .set({ status: "hidden", updatedAt: new Date() })

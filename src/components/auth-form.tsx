@@ -70,7 +70,7 @@ export function AuthForm({
         <p className="auth-intro">
           {register
             ? "一起留下十一小日子的回忆"
-            : "登录 BNDS.life，参与故事与评论"}
+            : "登录 BNDS.life，留下你的校园回忆"}
         </p>
         <form onSubmit={submit} className="auth-form">
           {register && (

@@ -111,6 +111,7 @@ export const videoComments = pgTable(
       .references(() => user.id, { onDelete: "cascade" }),
     parentId: uuid("parent_id"),
     body: text("body").notNull(),
+    isStory: boolean("is_story").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true, precision: 3 })
       .notNull()
       .defaultNow(),
@@ -118,6 +119,13 @@ export const videoComments = pgTable(
   (t) => [
     index("video_comments_browse_idx").on(t.videoId, t.parentId, t.createdAt),
     index("video_comments_user_idx").on(t.userId, t.createdAt),
+    uniqueIndex("video_comments_one_story_idx")
+      .on(t.videoId)
+      .where(sql`${t.isStory}`),
+    check(
+      "video_comments_story_root_check",
+      sql`NOT ${t.isStory} OR ${t.parentId} IS NULL`,
+    ),
     unique("video_comments_id_video_id_key").on(t.id, t.videoId),
     foreignKey({
       columns: [t.parentId, t.videoId],
@@ -125,7 +133,7 @@ export const videoComments = pgTable(
     }).onDelete("cascade"),
     check(
       "video_comments_body_check",
-      sql`length(trim(${t.body})) BETWEEN 1 AND 5000`,
+      sql`length(trim(${t.body})) BETWEEN 1 AND CASE WHEN ${t.isStory} THEN 100000 ELSE 5000 END`,
     ),
   ],
 );

@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { authClient } from "~/server/better-auth/client";
 import { api } from "~/trpc/react";
-import { DeletionTasks } from "./deletion-tasks";
+import { OfflineVideos } from "./offline-videos";
 
 export function AccountMenu() {
   const { data: session, isPending } = authClient.useSession();
@@ -14,7 +14,7 @@ export function AccountMenu() {
   const utils = api.useUtils();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [tasksOpen, setTasksOpen] = useState(false);
+  const [offlineOpen, setOfflineOpen] = useState(false);
   const viewer = api.discussion.viewer.useQuery(undefined, {
     enabled: Boolean(session),
   });
@@ -68,9 +68,9 @@ export function AccountMenu() {
           {viewer.data?.isOfficial && (
             <button
               className="account-task-button"
-              onClick={() => setTasksOpen(true)}
+              onClick={() => setOfflineOpen(true)}
             >
-              删除任务
+              下线视频
             </button>
           )}
           <button
@@ -102,8 +102,8 @@ export function AccountMenu() {
           )}
         </div>
       </details>
-      {tasksOpen && viewer.data?.isOfficial && (
-        <DeletionTasks onClose={() => setTasksOpen(false)} />
+      {offlineOpen && viewer.data?.isOfficial && (
+        <OfflineVideos onClose={() => setOfflineOpen(false)} />
       )}
     </>
   );

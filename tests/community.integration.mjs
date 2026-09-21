@@ -21,7 +21,12 @@ test("账户与讨论：权限、身份伪造、回复、故事、日期及删�
     onnotice: () => {},
   });
   try {
-    for (const name of ["001-media", "003-community", "004-video-deletion"])
+    for (const name of [
+      "001-media",
+      "003-community",
+      "004-video-deletion",
+      "005-single-story",
+    ])
       await sql.unsafe(
         await readFile(
           new URL("../ops/migrations/" + name + ".sql", import.meta.url),
@@ -118,7 +123,7 @@ test("账户与讨论：权限、身份伪造、回复、故事、日期及删�
       c.update(uid, { id: a, title: "不允许", recordedAt: null }),
       (e) => e.code === "FORBIDDEN",
     );
-    await assert.rejects(c.remove(uid, a), (e) => e.code === "FORBIDDEN");
+    await assert.rejects(c.offline(uid, a), (e) => e.code === "FORBIDDEN");
     const root = await c.add(uid, {
       videoId: a,
       body: "<script>保留纯文本</script>",
@@ -132,11 +137,11 @@ test("账户与讨论：权限、身份伪造、回复、故事、日期及删�
       c.add(uid, { videoId: b, body: "跨视频", parentId: root.id }),
       (e) => e.code === "BAD_REQUEST",
     );
-    const story = await c.add(official, { videoId: a, body: "官方故事" });
+    const story = await c.saveStory(official, { videoId: a, body: "官方故事" });
     assert.equal((await c.stories(a))[0].id, story.id);
     assert.equal((await c.list({ videoId: a })).items.length, 1);
     await sql`update video_comments set created_at=now()-interval '1 minute'`;
-    const reply = await c.add(official, {
+    const reply = await c.add(uid, {
       videoId: a,
       body: "回复同学",
       parentId: root.id,
@@ -170,16 +175,16 @@ test("账户与讨论：权限、身份伪造、回复、故事、日期及删�
       ).recordedAt,
       "2023-02",
     );
-    const job = await c.remove(official, a);
+    const job = await c.offline(official, a);
     assert.equal(job.status, "pending");
-    assert.equal((await c.remove(official, a)).jobId, job.jobId);
+    assert.equal((await c.offline(official, a)).jobId, job.jobId);
     assert.equal(
       (await sql`select status from videos where id=${a}`)[0].status,
       "hidden",
     );
     assert.equal(
       (await sql`select count(*) from deleted_video_sources`)[0].count,
-      "1",
+      "0",
     );
     await assert.rejects(
       c.add(uid, { videoId: a, body: "已删除" }),
@@ -190,10 +195,10 @@ test("账户与讨论：权限、身份伪造、回复、故事、日期及删�
       (e) => e.code === "FORBIDDEN",
     );
     assert.equal((await c.deletion(official, job.jobId)).status, "pending");
-    await assert.rejects(c.deletions(uid), (e) => e.code === "FORBIDDEN");
-    assert.equal((await c.deletions(official))[0].jobId, job.jobId);
+    await assert.rejects(c.offlineVideos(uid), (e) => e.code === "FORBIDDEN");
+    assert.equal((await c.offlineVideos(official))[0].jobId, job.jobId);
     await sql`update video_deletion_jobs set status='failed' where id=${job.jobId}`;
-    assert.equal((await c.remove(official, a)).status, "pending");
+    assert.equal((await c.offline(official, a)).status, "failed");
     for (let n = 0; n < 25; n++)
       await sql`insert into video_comments(id,video_id,user_id,body,created_at) values(${randomUUID()},${b},${uid},${"分页" + n},'2026-01-01 00:00:00.123456+00')`;
     const firstPage = await c.list({ videoId: b });

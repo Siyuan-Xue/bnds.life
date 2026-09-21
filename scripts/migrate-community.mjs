@@ -6,7 +6,11 @@ try {
   await withMediaLock(sql, async (connection) => {
     await connection`BEGIN`;
     try {
-      for (const name of ["003-community", "004-video-deletion"])
+      for (const name of [
+        "003-community",
+        "004-video-deletion",
+        "005-single-story",
+      ])
         await connection.unsafe(
           await readFile(
             new URL(`../ops/migrations/${name}.sql`, import.meta.url),
@@ -19,7 +23,7 @@ try {
       throw error;
     }
   });
-  console.log("账户、评论及删除任务迁移完成");
+  console.log("账户、故事、评论及下线任务迁移完成");
 } finally {
   await sql.end();
 }

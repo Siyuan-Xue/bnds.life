@@ -6,23 +6,18 @@ import { createCommunity, updateInput } from "~/server/community";
 import { protectedProcedure } from "~/server/api/trpc";
 
 export const videoRouter = createTRPCRouter({
-  deletions: protectedProcedure.query(({ ctx }) =>
-    createCommunity(ctx.db).deletions(ctx.session.user.id),
+  offlineVideos: protectedProcedure.query(({ ctx }) =>
+    createCommunity(ctx.db).offlineVideos(ctx.session.user.id),
   ),
   update: protectedProcedure
     .input(updateInput)
     .mutation(({ ctx, input }) =>
       createCommunity(ctx.db).update(ctx.session.user.id, input),
     ),
-  remove: protectedProcedure
+  offline: protectedProcedure
     .input(z.object({ id: z.string().uuid() }))
     .mutation(({ ctx, input }) =>
-      createCommunity(ctx.db).remove(ctx.session.user.id, input.id),
-    ),
-  deletion: protectedProcedure
-    .input(z.object({ jobId: z.string().uuid() }))
-    .query(({ ctx, input }) =>
-      createCommunity(ctx.db).deletion(ctx.session.user.id, input.jobId),
+      createCommunity(ctx.db).offline(ctx.session.user.id, input.id),
     ),
   list: publicProcedure
     .input(z.object({ query: z.string().max(200).optional() }).optional())
