@@ -11,6 +11,7 @@ export function FeaturedVideos({ videos }: { videos: Video[] }) {
   const headingId = useId();
   const stripRef = useRef<HTMLDivElement>(null);
   const groupRef = useRef<HTMLDivElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
   const [canScroll, setCanScroll] = useState(false);
   const [autoScroll, setAutoScroll] = useState(false);
 
@@ -39,80 +40,126 @@ export function FeaturedVideos({ videos }: { videos: Video[] }) {
   useEffect(() => {
     const strip = stripRef.current;
     const group = groupRef.current;
-    if (!strip || !group || !canScroll || !autoScroll) return;
+    const track = trackRef.current;
+    if (!strip || !group || !track || !canScroll || !autoScroll) return;
 
-    let frame = 0;
-    let previousTime = 0;
-    let position = strip.scrollLeft;
-    let lastWritten = position;
+    const pixelsPerMs = 0.036;
+    let cycle = 0;
+    let motion: Animation | undefined;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let disposed = false;
     let hovered = strip.matches(":hover");
     let dragging = false;
     let visible = true;
     let resumeAfter = 0;
-    const pauseBriefly = () => {
-      resumeAfter = performance.now() + 2500;
-    };
-    const enter = (event: PointerEvent) => {
-      if (event.pointerType !== "touch") hovered = true;
-    };
-    const leave = () => {
-      hovered = false;
-    };
-    const down = () => {
-      dragging = true;
-    };
-    const up = () => {
-      dragging = false;
-      pauseBriefly();
-    };
-    const observer = new IntersectionObserver(([entry]) => {
-      visible = entry?.isIntersecting ?? false;
-    });
-    observer.observe(strip);
-    strip.addEventListener("pointerenter", enter);
-    strip.addEventListener("pointerleave", leave);
-    strip.addEventListener("pointerdown", down);
-    strip.addEventListener("wheel", pauseBriefly, { passive: true });
-    window.addEventListener("pointerup", up);
-    window.addEventListener("pointercancel", up);
 
-    const tick = (now: number) => {
-      const elapsed = previousTime ? Math.min(now - previousTime, 50) : 0;
-      previousTime = now;
-      const paused =
+    // Transfer the compositor's exact position to native scrolling when interacting.
+    const suspend = () => {
+      if (!motion) return;
+      const time = Number(motion.currentTime ?? 0);
+      const position = (strip.scrollLeft + time * pixelsPerMs) % cycle;
+      motion.cancel();
+      motion = undefined;
+      strip.scrollLeft = position;
+    };
+    const reconcile = () => {
+      if (disposed) return;
+      clearTimeout(timer);
+      const remaining = resumeAfter - performance.now();
+      if (
         hovered ||
         dragging ||
         !visible ||
         document.hidden ||
         strip.matches(":focus-within") ||
-        now < resumeAfter;
-      if (paused) {
-        position = strip.scrollLeft;
-      } else {
-        // Keep subpixel progress even when the browser rounds scrollLeft.
-        if (Math.abs(strip.scrollLeft - lastWritten) > 1)
-          position = strip.scrollLeft;
-        const cycle =
-          group.getBoundingClientRect().width +
-          parseFloat(getComputedStyle(strip).columnGap);
-        if (cycle > 0) {
-          position = (position + elapsed * 0.036) % cycle;
-          strip.scrollLeft = position;
-        }
+        remaining > 0
+      ) {
+        suspend();
+        if (remaining > 0) timer = setTimeout(reconcile, remaining);
+        return;
       }
-      lastWritten = strip.scrollLeft;
-      frame = requestAnimationFrame(tick);
+      if (motion || cycle <= 0) return;
+      const position = strip.scrollLeft % cycle;
+      // Transform animation runs on the compositor, without per-frame layout reads
+      // or integer scrollLeft updates that make slow motion look like low FPS.
+      motion = track.animate(
+        [
+          { transform: "translateX(0)" },
+          { transform: `translateX(-${cycle}px)` },
+        ],
+        {
+          duration: cycle / pixelsPerMs,
+          iterations: Infinity,
+          easing: "linear",
+        },
+      );
+      motion.pause();
+      motion.currentTime = position / pixelsPerMs;
+      strip.scrollLeft = 0;
+      motion.play();
     };
-    frame = requestAnimationFrame(tick);
+    const pauseBriefly = () => {
+      resumeAfter = performance.now() + 2500;
+      reconcile();
+    };
+    const enter = (event: PointerEvent) => {
+      if (event.pointerType !== "touch") {
+        hovered = true;
+        reconcile();
+      }
+    };
+    const leave = () => {
+      hovered = false;
+      reconcile();
+    };
+    const down = () => {
+      dragging = true;
+      reconcile();
+    };
+    const up = () => {
+      if (!dragging) return;
+      dragging = false;
+      pauseBriefly();
+    };
+    const focusChanged = () => queueMicrotask(reconcile);
+    const resize = new ResizeObserver(() => {
+      suspend();
+      cycle =
+        group.getBoundingClientRect().width +
+        parseFloat(getComputedStyle(track).columnGap);
+      reconcile();
+    });
+    resize.observe(strip);
+    resize.observe(group);
+    const visibility = new IntersectionObserver(([entry]) => {
+      visible = entry?.isIntersecting ?? false;
+      reconcile();
+    });
+    visibility.observe(strip);
+    strip.addEventListener("pointerenter", enter);
+    strip.addEventListener("pointerleave", leave);
+    strip.addEventListener("pointerdown", down);
+    strip.addEventListener("wheel", pauseBriefly, { passive: true });
+    strip.addEventListener("focusin", focusChanged);
+    strip.addEventListener("focusout", focusChanged);
+    window.addEventListener("pointerup", up);
+    window.addEventListener("pointercancel", up);
+    document.addEventListener("visibilitychange", reconcile);
     return () => {
-      cancelAnimationFrame(frame);
-      observer.disconnect();
+      disposed = true;
+      clearTimeout(timer);
+      suspend();
+      resize.disconnect();
+      visibility.disconnect();
       strip.removeEventListener("pointerenter", enter);
       strip.removeEventListener("pointerleave", leave);
       strip.removeEventListener("pointerdown", down);
       strip.removeEventListener("wheel", pauseBriefly);
+      strip.removeEventListener("focusin", focusChanged);
+      strip.removeEventListener("focusout", focusChanged);
       window.removeEventListener("pointerup", up);
       window.removeEventListener("pointercancel", up);
+      document.removeEventListener("visibilitychange", reconcile);
     };
   }, [autoScroll, canScroll, videos]);
 
@@ -134,18 +181,20 @@ export function FeaturedVideos({ videos }: { videos: Video[] }) {
       </div>
       {videos.length ? (
         <div className={styles.strip} ref={stripRef}>
-          <div className={styles.group} ref={groupRef}>
-            {videos.map((video) => (
-              <VideoCard key={video.id} video={video} />
-            ))}
-          </div>
-          {canScroll && (
-            <div className={styles.group} aria-hidden="true">
+          <div className={styles.track} ref={trackRef}>
+            <div className={styles.group} ref={groupRef}>
               {videos.map((video) => (
-                <VideoCard key={video.id} video={video} tabIndex={-1} />
+                <VideoCard key={video.id} video={video} />
               ))}
             </div>
-          )}
+            {canScroll && (
+              <div className={styles.group} aria-hidden="true">
+                {videos.map((video) => (
+                  <VideoCard key={video.id} video={video} tabIndex={-1} />
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       ) : (
         <p className={styles.empty}>

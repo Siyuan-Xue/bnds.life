@@ -13,14 +13,17 @@
   font-weight: 700;
 }
 .strip {
-  display: flex;
-  gap: 20px;
   overflow-x: auto;
   scrollbar-width: none;
   padding-bottom: 8px;
 }
 .strip::-webkit-scrollbar {
   display: none;
+}
+.track {
+  display: flex;
+  gap: 20px;
+  width: max-content;
 }
 .group {
   display: grid;
