@@ -45,7 +45,7 @@ export function FeaturedVideos({ videos }: { videos: Video[] }) {
 
     const pixelsPerMs = 0.036;
     let cycle = 0;
-    let motion: Animation | undefined;
+    let motions: Animation[] = [];
     let timer: ReturnType<typeof setTimeout> | undefined;
     let disposed = false;
     let hovered = strip.matches(":hover");
@@ -55,11 +55,12 @@ export function FeaturedVideos({ videos }: { videos: Video[] }) {
 
     // Transfer the compositor's exact position to native scrolling when interacting.
     const suspend = () => {
+      const motion = motions[0];
       if (!motion) return;
       const time = Number(motion.currentTime ?? 0);
       const position = (strip.scrollLeft + time * pixelsPerMs) % cycle;
-      motion.cancel();
-      motion = undefined;
+      motions.forEach((animation) => animation.cancel());
+      motions = [];
       strip.scrollLeft = position;
     };
     const reconcile = () => {
@@ -78,25 +79,37 @@ export function FeaturedVideos({ videos }: { videos: Video[] }) {
         if (remaining > 0) timer = setTimeout(reconcile, remaining);
         return;
       }
-      if (motion || cycle <= 0) return;
+      if (motions.length || cycle <= 0) return;
       const position = strip.scrollLeft % cycle;
-      // Transform animation runs on the compositor, without per-frame layout reads
-      // or integer scrollLeft updates that make slow motion look like low FPS.
-      motion = track.animate(
-        [
-          { transform: "translateX(0)" },
-          { transform: `translateX(-${cycle}px)` },
-        ],
-        {
-          duration: cycle / pixelsPerMs,
-          iterations: Infinity,
-          easing: "linear",
-        },
-      );
-      motion.pause();
-      motion.currentTime = position / pixelsPerMs;
+      const halfDuration = cycle / pixelsPerMs;
+      // Each group wraps only while fully outside the viewport. The other group
+      // keeps moving across the screen without a visible transform reset.
+      motions = Array.from(track.children).map((element, index) => {
+        const animation = element.animate(
+          [
+            { transform: `translate3d(${index === 0 ? cycle : 0}px, 0, 0)` },
+            {
+              transform: `translate3d(-${index === 0 ? cycle : cycle * 2}px, 0, 0)`,
+            },
+          ],
+          {
+            duration: halfDuration * 2,
+            delay: index === 0 ? -halfDuration : 0,
+            iterations: Infinity,
+            easing: "linear",
+          },
+        );
+        animation.pause();
+        animation.currentTime = position / pixelsPerMs;
+        return animation;
+      });
       strip.scrollLeft = 0;
-      motion.play();
+      const now = document.timeline.currentTime;
+      for (const animation of motions) {
+        if (typeof now === "number")
+          animation.startTime = now - position / pixelsPerMs;
+        else animation.play();
+      }
     };
     const pauseBriefly = () => {
       resumeAfter = performance.now() + 2500;
