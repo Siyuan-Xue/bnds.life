@@ -37,12 +37,13 @@ if (values.help || !command) {
   pnpm media import --file /path/video.mp4 [--title 标题] [--date 2021-06-03] [--story-file story.txt] [--poster cover.jpg] [--publish] [--consume]
   pnpm media batch --manifest /path/batch.json [--publish] [--consume]
   pnpm media list
-  pnpm media native [UUID]  为已导入视频补充无损原画源；省略 UUID 时检查全部
+  pnpm media native UUID --file /path/source.mov  使用原片补充无损原画源
+  pnpm media native [UUID]  检查已有原画；缺少源文件时明确报错
   pnpm media edit UUID [--title 标题] [--date 日期或空字符串] [--story-file story.txt]
   pnpm media publish UUID
   pnpm media hide UUID
   --root 可覆盖 MEDIA_ROOT。默认仅导入草稿；未知拍摄日期请留空。
-  --consume 在成功入库并复核哈希后清理 incoming 内的上传副本，原片保留于 originals。`);
+  --consume 在成功入库并复核哈希后删除 incoming；服务器不保留原片。重复文件仅在已有播放资源通过完整性校验后删除。`);
   process.exit(0);
 }
 let sql;
@@ -87,11 +88,16 @@ try {
       ),
     );
   } else if (command === "native") {
+    if (values.file && !id) throw new Error("使用 --file 时必须指定视频 UUID");
     const rows = id
       ? [{ id }]
       : await sql`SELECT id FROM videos ORDER BY created_at`;
     for (const row of rows)
-      console.log(JSON.stringify(await addNativePlayback(sql, root, row.id)));
+      console.log(
+        JSON.stringify(
+          await addNativePlayback(sql, root, row.id, { file: values.file }),
+        ),
+      );
   } else if (command === "import" || command === "edit") {
     const story =
       values["story-file"] !== undefined

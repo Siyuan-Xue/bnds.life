@@ -136,6 +136,14 @@ export async function removeDeletedIncoming(root, hashes) {
   await walk(["incoming"]);
   return removed;
 }
+// Retirement removes only legacy camera archives, never playable assets or rows.
+export async function removeOriginalFiles(root, id) {
+  if (!uuidPattern.test(id)) throw new Error("无效的视频 ID");
+  root = await deletionRoot(root);
+  if (await mediaDirectory(root, "originals"))
+    await removeTree(root, ["originals", id]);
+}
+
 export async function deleteVideoFiles(root, id, sourceSha256) {
   if (!uuidPattern.test(id) || !shaPattern.test(sourceSha256))
     throw new Error("无效的删除任务");

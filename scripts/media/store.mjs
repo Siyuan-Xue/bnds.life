@@ -1,6 +1,8 @@
 import { randomUUID } from "node:crypto";
 import {
   readFile,
+  copyFile,
+  lstat,
   realpath,
   unlink,
   mkdtemp,
@@ -15,6 +17,7 @@ import {
   hashFile,
   prepareMedia,
   verifyAsset,
+  verifyOriginalMetadata,
   uuidPattern,
   createNativePlayback,
 } from "./files.mjs";
@@ -129,7 +132,32 @@ export async function importVideo(sql, options) {
       error.code = "VIDEO_SOURCE_DELETED";
       throw error;
     }
-    if (existing)
+    if (existing) {
+      if (options.consume) {
+        const assets =
+          await conn`SELECT * FROM video_assets WHERE video_id=${existing.id}`;
+        if (
+          !["original", "playback", "poster"].every((kind) =>
+            assets.some((a) => a.kind === kind),
+          )
+        )
+          throw new Error("已有视频资源不完整，保留 incoming 文件");
+        verifyOriginalMetadata(
+          assets.find((a) => a.kind === "original"),
+          sourceSha256,
+        );
+        for (const asset of assets) {
+          await verifyAsset(root, asset);
+          if (
+            asset.kind !== "original" &&
+            (await hashFile(resolve(root, asset.object_key))) !== asset.sha256
+          )
+            throw new Error("已有播放资源哈希不一致，保留 incoming 文件");
+        }
+        if ((await hashFile(file)) !== sourceSha256)
+          throw new Error("incoming 文件已变化，未清理");
+        await unlink(file);
+      }
       return {
         ...existing,
         duplicate: true,
@@ -137,19 +165,31 @@ export async function importVideo(sql, options) {
           "相同原片已存在，标题/故事/发布状态保持不变；如需修改请使用 edit/publish",
         ],
       };
+    }
     const id = randomUUID();
     const prepared = await prepareMedia({ ...options, root, file, id });
-    if (sourceSha256 !== prepared.sourceSha256)
-      throw new Error("文件在导入中变化，拒绝入库");
-    await transaction(conn, async (tx) => {
-      await tx`INSERT INTO videos ${tx({ id, title: details.title, story: details.story ?? null, recorded_date: details.recorded_date ?? null, source_sha256: sourceSha256, status: options.publish ? "published" : "draft", published_at: options.publish ? new Date() : null })}`;
-      for (const a of prepared.assets)
-        await tx`INSERT INTO video_assets ${tx({ id: randomUUID(), video_id: id, kind: a.kind, object_key: a.objectKey, original_filename: a.originalFilename, mime_type: a.mimeType, size_bytes: a.sizeBytes, sha256: a.sha256, width: a.width, height: a.height, duration_ms: a.durationMs, processing_method: a.processingMethod, metadata: a.metadata === null ? null : tx.json(a.metadata) })}`;
-    });
+    try {
+      if (sourceSha256 !== prepared.sourceSha256)
+        throw new Error("文件在导入中变化，拒绝入库");
+      await transaction(conn, async (tx) => {
+        await tx`INSERT INTO videos ${tx({ id, title: details.title, story: details.story ?? null, recorded_date: details.recorded_date ?? null, source_sha256: sourceSha256, status: options.publish ? "published" : "draft", published_at: options.publish ? new Date() : null })}`;
+        for (const a of prepared.assets)
+          await tx`INSERT INTO video_assets ${tx({ id: randomUUID(), video_id: id, kind: a.kind, object_key: a.objectKey, original_filename: a.originalFilename, mime_type: a.mimeType, size_bytes: a.sizeBytes, sha256: a.sha256, width: a.width, height: a.height, duration_ms: a.durationMs, processing_method: a.processingMethod, metadata: a.metadata === null ? null : tx.json(a.metadata) })}`;
+      });
+    } catch (error) {
+      // An interrupted COMMIT can be ambiguous: preserve referenced outputs.
+      const persisted = await conn`SELECT id FROM videos WHERE id=${id}`.catch(
+        () => null,
+      );
+      if (persisted && !persisted.length)
+        for (const folder of ["playback", "posters"])
+          await rm(join(root, folder, id), { recursive: true, force: true });
+      throw error;
+    }
     if (options.consume) {
       if ((await hashFile(file)) !== sourceSha256)
         prepared.warnings.push(
-          "incoming 文件已变化，未清理；已入库的原片副本完整保留",
+          "incoming 文件已变化，未清理；服务器仅保留播放文件与原片元数据",
         );
       else await unlink(file);
     }
@@ -170,7 +210,7 @@ export async function setStatus(sql, root, id, status) {
     transaction(connection, async (conn) => {
       await conn`SELECT id FROM videos WHERE id=${id} FOR UPDATE`;
       const [row] =
-        await conn`SELECT id FROM videos WHERE id=${id} AND NOT EXISTS (SELECT 1 FROM deleted_video_sources WHERE source_sha256=videos.source_sha256)`;
+        await conn`SELECT id,source_sha256 FROM videos WHERE id=${id} AND NOT EXISTS (SELECT 1 FROM deleted_video_sources WHERE source_sha256=videos.source_sha256)`;
       if (!row) throw new Error("未找到视频");
       if (status === "published") {
         const assets =
@@ -181,6 +221,10 @@ export async function setStatus(sql, root, id, status) {
           )
         )
           throw new Error("媒体资源尚未齐全，不能发布");
+        verifyOriginalMetadata(
+          assets.find((a) => a.kind === "original"),
+          row.source_sha256,
+        );
         for (const asset of assets) await verifyAsset(root, asset);
       }
       const changed =
@@ -192,11 +236,11 @@ export async function setStatus(sql, root, id, status) {
 }
 
 // Backfill existing videos without changing their titles, dates, publication or fallback.
-export async function addNativePlayback(sql, root, id) {
+export async function addNativePlayback(sql, root, id, options = {}) {
   if (!uuidPattern.test(id)) throw new Error("无效的视频 ID");
   return withMediaLock(sql, async (conn) => {
     const [allowed] =
-      await conn`SELECT id FROM videos WHERE id=${id} AND NOT EXISTS (SELECT 1 FROM deleted_video_sources WHERE source_sha256=videos.source_sha256)`;
+      await conn`SELECT id,source_sha256 FROM videos WHERE id=${id} AND NOT EXISTS (SELECT 1 FROM deleted_video_sources WHERE source_sha256=videos.source_sha256)`;
     if (!allowed) throw new Error("视频不存在或已申请永久删除");
     const assets = await conn`SELECT * FROM video_assets WHERE video_id=${id}`;
     if (assets.some((a) => a.kind === "native"))
@@ -206,12 +250,26 @@ export async function addNativePlayback(sql, root, id) {
     if (!original || !fallback) throw new Error("缺少原片或兼容播放资源");
     if (["reuse", "remux"].includes(fallback.processing_method))
       return { id, skipped: "already-lossless" };
-    await verifyAsset(root, original);
-    const file = resolve(root, original.object_key);
-    if ((await hashFile(file)) !== original.sha256)
-      throw new Error("原片校验不一致");
+    verifyOriginalMetadata(original, allowed.source_sha256);
+    const input = options.file
+      ? resolve(options.file)
+      : resolve(root, original.object_key);
+    if (!options.file) {
+      try {
+        await verifyAsset(root, { ...original, kind: "source-file" });
+      } catch (error) {
+        if (error.code === "ENOENT")
+          throw new Error("服务器不保留原片，请提供 --file");
+        throw error;
+      }
+    }
+    if (!(await lstat(input)).isFile()) throw new Error("只接受普通原片文件");
     const work = await mkdtemp(join(root, ".work", `${id}-native-`));
     try {
+      const file = join(work, "source");
+      await copyFile(input, file);
+      if ((await hashFile(file)) !== allowed.source_sha256)
+        throw new Error("原片校验不一致");
       const output = join(work, "native.mp4");
       const result = await createNativePlayback({ file, output });
       if (!result) return { id, skipped: "unsupported-codec" };

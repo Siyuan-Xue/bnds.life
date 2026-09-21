@@ -14,6 +14,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
   deleteVideoFiles,
+  removeOriginalFiles,
   removeDeletedIncoming,
   deletionRoot,
 } from "../scripts/media/deletion.mjs";
@@ -138,4 +139,33 @@ test("cleanup retention defaults to seven complete days and rejects unsafe confi
   );
   for (const days of [-1, 1.5, NaN, Infinity, "0", 36501])
     assert.throws(() => cleanupCutoff(days, now), /RETENTION/);
+});
+
+test("retire originals is idempotent and preserves playback, posters and incoming", async () => {
+  const root = await mkdtemp(join(tmpdir(), "bnds-retire-"));
+  const id = randomUUID();
+  try {
+    for (const folder of ["originals", "playback", "posters"]) {
+      await mkdir(join(root, folder, id), { recursive: true });
+      await writeFile(join(root, folder, id, "file"), source);
+    }
+    await mkdir(join(root, "incoming"));
+    await writeFile(join(root, "incoming", "source"), source);
+    await removeOriginalFiles(root, id);
+    await removeOriginalFiles(root, id);
+    assert.equal(await exists(join(root, "originals", id)), false);
+    for (const folder of ["playback", "posters"])
+      assert.equal(
+        await readFile(join(root, folder, id, "file"), "utf8"),
+        source,
+      );
+    assert.equal(
+      await readFile(join(root, "incoming", "source"), "utf8"),
+      source,
+    );
+    await deleteVideoFiles(root, id, sha);
+    assert.equal(await exists(join(root, "playback", id)), false);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
 });

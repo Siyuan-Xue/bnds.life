@@ -91,12 +91,7 @@ test(
       assert.equal(video.color_space, "bt709");
       assert.equal(await hashFile(file), before);
       assert.equal(
-        await hashFile(
-          join(
-            root,
-            result.assets.find((a) => a.kind === "original").objectKey,
-          ),
-        ),
+        result.assets.find((a) => a.kind === "original").sha256,
         before,
       );
       const frame = (path) =>

@@ -3,7 +3,6 @@ import {
   access,
   chmod,
   copyFile,
-  link,
   lstat,
   mkdir,
   mkdtemp,
@@ -291,12 +290,8 @@ export async function prepareMedia({ file, root, id, poster }) {
           playback,
         ]);
         method = "remux";
-        // Reuse only after sanitization has proven the complete bytes unchanged.
-        if ((await hashFile(playback)) === sourceSha256) {
-          await rm(playback);
-          await link(original, playback);
-          method = "reuse";
-        }
+        // Keep the verified remux output; the temporary source is discarded.
+        if ((await hashFile(playback)) === sourceSha256) method = "reuse";
       } else {
         const scale =
           "scale=w='trunc(iw*sar/2)*2':h=ih,setsar=1,scale=w='min(1920,iw)':h='min(1920,ih)':force_original_aspect_ratio=decrease:force_divisible_by=2";
@@ -442,7 +437,7 @@ export async function prepareMedia({ file, root, id, poster }) {
               : null,
       });
     }
-    for (const folder of ["originals", "playback", "posters"]) {
+    for (const folder of ["playback", "posters"]) {
       const destination = join(root, folder, id);
       await rename(join(work, folder), destination);
       installed.push(destination);
@@ -457,7 +452,29 @@ export async function prepareMedia({ file, root, id, poster }) {
   }
 }
 
+export function verifyOriginalMetadata(asset, sourceSha256 = asset?.sha256) {
+  if (
+    !asset ||
+    asset.kind !== "original" ||
+    !/^[a-f0-9]{64}$/.test(asset.sha256 ?? "") ||
+    asset.sha256 !== sourceSha256 ||
+    typeof asset.original_filename !== "string" ||
+    !asset.original_filename ||
+    !(Number(asset.duration_ms) > 0) ||
+    !Number.isFinite(Number(asset.duration_ms)) ||
+    !(Number(asset.size_bytes) > 0) ||
+    !Number.isFinite(Number(asset.size_bytes)) ||
+    !asset.metadata ||
+    typeof asset.metadata !== "object"
+  )
+    throw new Error("原片元数据不完整或来源哈希不一致");
+}
+
 export async function verifyAsset(root, asset) {
+  if (asset.kind === "original") {
+    verifyOriginalMetadata(asset);
+    return;
+  }
   if (
     !/^(originals|playback|posters)\/[0-9a-f-]+\/[a-zA-Z0-9_.-]+$/.test(
       asset.object_key,

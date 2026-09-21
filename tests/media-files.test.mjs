@@ -9,9 +9,10 @@ import {
   hashFile,
   requireSpace,
   probeMedia,
+  verifyAsset,
 } from "../scripts/media/files.mjs";
 
-test("真实媒体处理：保留原片、自动封面、相同比特流复用与按需转码", async () => {
+test("真实媒体处理：仅保留原片元数据、自动封面、相同比特流复用与按需转码", async () => {
   const root = await mkdtemp(join(tmpdir(), "bnds-media-test-"));
   try {
     const file = resolve("public/media/placeholder-landscape.mp4");
@@ -21,10 +22,24 @@ test("真实媒体处理：保留原片、自动封面、相同比特流复用�
       id: "00000000-0000-4000-8000-000000000001",
       file,
     });
-    assert.equal(
-      await hashFile(join(root, result.assets[0].objectKey)),
-      before,
+    const original = result.assets.find((a) => a.kind === "original");
+    assert.equal(original.sha256, before);
+    assert.equal(original.originalFilename, "placeholder-landscape.mp4");
+    assert.ok(original.durationMs > 0);
+    assert.ok(original.metadata.streams.length);
+    await assert.rejects(
+      stat(join(root, "originals", "00000000-0000-4000-8000-000000000001")),
+      { code: "ENOENT" },
     );
+    await verifyAsset(root, {
+      kind: "original",
+      object_key: original.objectKey,
+      sha256: before,
+      original_filename: original.originalFilename,
+      duration_ms: original.durationMs,
+      size_bytes: original.sizeBytes,
+      metadata: original.metadata,
+    });
     const playback = result.assets.find((a) => a.kind === "playback");
     const poster = result.assets.find((a) => a.kind === "poster");
     assert.ok(playback.durationMs > 0);
@@ -41,6 +56,16 @@ test("真实媒体处理：保留原片、自动封面、相同比特流复用�
     assert.equal(
       second.assets.find((a) => a.kind === "playback").processingMethod,
       "reuse",
+    );
+    assert.equal(
+      await hashFile(
+        join(root, second.assets.find((a) => a.kind === "playback").objectKey),
+      ),
+      await hashFile(join(root, playback.objectKey)),
+    );
+    await assert.rejects(
+      stat(join(root, "originals", "00000000-0000-4000-8000-000000000002")),
+      { code: "ENOENT" },
     );
     const slow = join(root, "index-at-end.mp4");
     execFileSync("ffmpeg", ["-v", "error", "-i", file, "-c", "copy", slow]);

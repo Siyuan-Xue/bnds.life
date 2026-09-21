@@ -51,6 +51,7 @@ try {
       {
         createdAt: new Date().toISOString(),
         mediaRoot: process.env.MEDIA_ROOT ?? null,
+        originalStorage: "metadata-only; original paths need not exist",
         assets,
       },
       null,
