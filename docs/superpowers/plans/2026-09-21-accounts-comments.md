@@ -22,9 +22,13 @@ Public viewing; Chinese only; two navigation items; no email verification; no ad
 - [x] Implement frontend login/register, masthead account menu, comments/replies and official editing/deletion status without player layout changes.
 - [x] Add migration 004, media deletion worker and tombstones; test containment, retries, real file removal and import exclusion on synthetic files.
 - [x] Run lint/typecheck/unit/integration tests and production build. Review security boundaries, check desktop/mobile via browser.
-- [ ] Back up server DB, apply additive migrations, create official account when mailbox is provided, deploy app plus worker through SSH. Verify production public viewing, authentication and worker status.
-- [ ] Record operations, commit/push and verify clean Git state; deliver private official credentials path when created.
+- [x] Back up server DB, apply additive migrations, create official account when mailbox is provided, deploy app plus worker through SSH. Verify production public viewing, authentication and worker status.
+- [x] Record operations, commit/push and verify clean Git state; deliver private official credentials path when created.
 
 ## Verification completed before release
 
 26 unit tests and three isolated integration suites passed on the server. Local lint/typecheck and server production build passed. Browser checks covered registration without verification, automatic return to the video, ordinary comments, replies to official stories, date precision, name editing, durable deletion task entry, duplicate-button regression, and desktop/mobile panel geometry. Mobile player rectangle stayed identical while its story drawer opened. Official account was created before public authentication was enabled.
+
+## Release outcome
+
+Application release `9d7ac98` deployed through SSH; both website and media deletion services are active. Official mailbox `<ADMIN_EMAIL>` was seeded privately before opening registration. HTTPS login, current official privilege, public catalog of 78 videos, media byte-range delivery, and exact BNDS.life page titles passed live verification. Verification session was signed out. The isolated QA schema/service/files and SSH preview forwarding were removed. Before-release backup: `<BACKUP_ID>`; after-release backup: `<BACKUP_ID>`. Neither backup contains video file bytes; existing media files remain managed separately.
