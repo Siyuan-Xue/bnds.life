@@ -107,9 +107,9 @@ HDR 转换依据：[FFmpeg tonemap](https://ffmpeg.org/ffmpeg-filters.html#tonem
 
 ```sh
 # 服务器：生成只读验收凭据
-node --env-file=/srv/bnds-life/shared/.env /srv/bnds-life/media-tools/scripts/source-retention.mjs > /tmp/source-receipts.json
+MEDIA_ROOT=/srv/bnds-life/media node --env-file=/srv/bnds-life/shared/.env /srv/bnds-life/media-tools/scripts/source-retention.mjs > /tmp/source-receipts.json
 # 服务器：先 backup，再执行历史原片清理；任何资源校验失败则整批拒绝删除
-node --env-file=/srv/bnds-life/shared/.env /srv/bnds-life/media-tools/scripts/source-retention.mjs --execute
+MEDIA_ROOT=/srv/bnds-life/media node --env-file=/srv/bnds-life/shared/.env /srv/bnds-life/media-tools/scripts/source-retention.mjs --execute
 # 本机：经 SSH 取回新凭据后，仅删除经校验的已发布来源
 python3 scripts/cleanup-local-sources.py --receipts .local/source-receipts.json --directory videos --execute
 ```

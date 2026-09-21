@@ -182,7 +182,7 @@ test("隔离数据库：迁移幂等、重复导入保留编辑、显式发布�
     assert.ok(
       (await stat(join(root, "originals", second.id, "source.mov"))).size > 0,
     );
-    await sql`DELETE FROM videos WHERE id=${first.id}`;
+    await sql`INSERT INTO deleted_video_sources (source_sha256) SELECT source_sha256 FROM videos WHERE id=${first.id}`;
     const receipts = await sourceReceipts(sql, root, { execute: true });
     assert.equal(receipts.verified.length, 1);
     assert.equal(receipts.rejected.length, 0);

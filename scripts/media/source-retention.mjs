@@ -7,7 +7,7 @@ import { removeOriginalFiles } from "./deletion.mjs";
 export async function sourceReceipts(sql, root, { execute = false } = {}) {
   return withMediaLock(sql, async (conn) => {
     const rows =
-      await conn`SELECT id,status,source_sha256 FROM videos ORDER BY id`;
+      await conn`SELECT id,status,source_sha256 FROM videos WHERE NOT EXISTS (SELECT 1 FROM deleted_video_sources WHERE source_sha256=videos.source_sha256) ORDER BY id`;
     const assets = await conn`SELECT * FROM video_assets`;
     const verified = [],
       rejected = [];
