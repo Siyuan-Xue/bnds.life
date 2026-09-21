@@ -5,9 +5,11 @@ import { formatDuration, type Video } from "~/lib/videos";
 export function VideoCard({
   video,
   compact = false,
+  tabIndex,
 }: {
   video: Video;
   compact?: boolean;
+  tabIndex?: number;
 }) {
   const Heading = compact ? "h2" : "h3";
   return (
@@ -16,6 +18,7 @@ export function VideoCard({
         className="thumbnail"
         href={`/watch/${video.id}`}
         aria-label={`观看：${video.title}`}
+        tabIndex={tabIndex}
       >
         <Image
           src={video.poster}
@@ -30,7 +33,9 @@ export function VideoCard({
       <div className="video-card-info">
         <div className="video-card-copy">
           <Heading>
-            <Link href={`/watch/${video.id}`}>{video.title}</Link>
+            <Link href={`/watch/${video.id}`} tabIndex={tabIndex}>
+              {video.title}
+            </Link>
           </Heading>
           <p>
             {video.recordedAt ? (
