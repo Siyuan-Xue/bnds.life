@@ -2,9 +2,6 @@
   margin-bottom: 32px;
 }
 .heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
   margin-bottom: 16px;
 }
 .section h2 {
@@ -20,6 +17,13 @@
 .strip::-webkit-scrollbar {
   display: none;
 }
+@media (hover: hover) and (pointer: fine) and (aspect-ratio > 1/1) {
+  .strip {
+    /* Room for lifted cards without shifting the surrounding layout. */
+    padding: 16px 12px 24px;
+    margin: -16px -12px;
+  }
+}
 .track {
   display: flex;
   gap: 20px;
@@ -34,15 +38,6 @@
 }
 .group > article {
   min-width: 0;
-}
-.motionButton {
-  padding: 4px 8px;
-  color: #606060;
-  font-size: 13px;
-  border-radius: 4px;
-}
-.motionButton:hover {
-  background: #f2f2f2;
 }
 .empty {
   margin: 0;

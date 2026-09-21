@@ -168,16 +168,6 @@ export function FeaturedVideos({ videos }: { videos: Video[] }) {
     <section className={styles.section} aria-labelledby={headingId}>
       <div className={styles.heading}>
         <h2 id={headingId}>精选</h2>
-        {canScroll && (
-          <button
-            type="button"
-            className={styles.motionButton}
-            onClick={() => setAutoScroll((current) => !current)}
-            aria-label={autoScroll ? "暂停精选自动滚动" : "继续精选自动滚动"}
-          >
-            {autoScroll ? "暂停滚动" : "继续滚动"}
-          </button>
-        )}
       </div>
       {videos.length ? (
         <div className={styles.strip} ref={stripRef}>

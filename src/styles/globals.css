@@ -241,10 +241,6 @@ p {
 .browse-toolbar a {
   color: var(--blue);
 }
-.month-heading > span {
-  color: var(--secondary);
-  font-size: 12px;
-}
 .video-timeline {
   max-width: 2400px;
   margin: 0 auto;
@@ -272,6 +268,31 @@ p {
 }
 .video-card {
   min-width: 0;
+}
+@media (hover: hover) and (pointer: fine) and (aspect-ratio > 1/1) {
+  .video-card {
+    position: relative;
+    transition: transform 180ms ease-out;
+  }
+  .video-card .thumbnail {
+    transition: box-shadow 180ms ease-out;
+  }
+  .video-card:is(:hover, :focus-within) {
+    z-index: 1;
+    transform: translateY(-4px) scale(1.02);
+  }
+  .video-card:is(:hover, :focus-within) .thumbnail {
+    box-shadow: 0 10px 24px -12px #0005;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .video-card,
+  .video-card .thumbnail {
+    transition: none;
+  }
+  .video-card:is(:hover, :focus-within) {
+    transform: none;
+  }
 }
 .thumbnail {
   position: relative;

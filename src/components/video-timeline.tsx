@@ -23,7 +23,6 @@ export function VideoTimeline({ videos }: { videos: Video[] }) {
                   "时间待补充"
                 )}
               </h2>
-              <span>{videos.length} 段视频</span>
             </div>
             <div className="video-grid">
               {videos.map((video) => (
