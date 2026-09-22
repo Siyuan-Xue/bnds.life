@@ -9,12 +9,15 @@ import { execFileSync } from "node:child_process";
 import { sourceReceipts } from "../scripts/media/source-retention.mjs";
 import {
   migrate,
-  importVideo,
+  importVideo as importWithMode,
   setStatus,
   editVideo,
   withMediaLock,
   addNativePlayback,
 } from "../scripts/media/store.mjs";
+
+const importVideo = (sql, options) =>
+  importWithMode(sql, { ...options, transcode: true });
 
 test("隔离数据库：迁移幂等、重复导入保留编辑、显式发布隐藏与缺失资源拒绝发布", async () => {
   assert.ok(process.env.DATABASE_URL, "需要专用测试连接或 .env");
@@ -190,6 +193,34 @@ test("隔离数据库：迁移幂等、重复导入保留编辑、显式发布�
       code: "ENOENT",
     });
     await setStatus(sql, root, second.id, "published");
+    const direct = join(root, "direct-native.mov");
+    execFileSync("ffmpeg", [
+      "-v",
+      "error",
+      "-i",
+      hevc,
+      "-c",
+      "copy",
+      "-metadata",
+      "comment=new source",
+      direct,
+    ]);
+    const third = await importWithMode(sql, {
+      root,
+      file: direct,
+      publish: true,
+    });
+    const directAssets =
+      await sql`SELECT * FROM video_assets WHERE video_id=${third.id}`;
+    assert.equal(directAssets.length, 3);
+    const primary = directAssets.find((a) => a.kind === "playback");
+    assert.equal(primary.processing_method, "stream-copy");
+    assert.match(primary.object_key, /native.mp4$/);
+    assert.match(primary.metadata.contentType, /hvc1/);
+    await setStatus(sql, root, third.id, "published");
+    await assert.rejects(stat(join(root, "originals", third.id)), {
+      code: "ENOENT",
+    });
     await migrate(sql);
   } finally {
     await sql.end();

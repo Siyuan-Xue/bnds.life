@@ -57,7 +57,8 @@ export function publicVideo(
         )
       : undefined;
   const duration = durationMs / 1000;
-  const native = assets.find((a) => a.kind === "native");
+  // A native-only import stores its primary lossless file as playback.
+  const native = assets.find((a) => a.kind === "native") ?? playback;
   const contentType =
     native?.metadata &&
     typeof native.metadata === "object" &&

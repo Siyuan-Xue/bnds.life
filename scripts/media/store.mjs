@@ -248,7 +248,7 @@ export async function addNativePlayback(sql, root, id, options = {}) {
     const original = assets.find((a) => a.kind === "original");
     const fallback = assets.find((a) => a.kind === "playback");
     if (!original || !fallback) throw new Error("缺少原片或兼容播放资源");
-    if (["reuse", "remux"].includes(fallback.processing_method))
+    if (["reuse", "remux", "stream-copy"].includes(fallback.processing_method))
       return { id, skipped: "already-lossless" };
     verifyOriginalMetadata(original, allowed.source_sha256);
     const input = options.file

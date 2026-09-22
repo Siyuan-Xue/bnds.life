@@ -25,6 +25,7 @@ const { values, positionals } = parseArgs({
     root: { type: "string" },
     publish: { type: "boolean", default: false },
     consume: { type: "boolean", default: false },
+    transcode: { type: "boolean", default: false },
     help: { type: "boolean", short: "h" },
   },
 });
@@ -43,6 +44,7 @@ if (values.help || !command) {
   pnpm media publish UUID
   pnpm media hide UUID
   --root 可覆盖 MEDIA_ROOT。默认仅导入草稿；未知拍摄日期请留空。
+  默认只生成 native.mp4 无损封装；无法封装则保留输入并报错。--transcode 可显式恢复兼容转码。
   --consume 在成功入库并复核哈希后删除 incoming；服务器不保留原片。重复文件仅在已有播放资源通过完整性校验后删除。`);
   process.exit(0);
 }
@@ -112,6 +114,7 @@ try {
       poster: values.poster,
       publish: values.publish,
       consume: values.consume,
+      transcode: values.transcode,
     };
     if (command === "import" && !values.file) throw new Error("请指定 --file");
     console.log(
@@ -143,6 +146,7 @@ try {
           poster: item.poster ? resolve(base, item.poster) : undefined,
           publish: values.publish,
           consume: values.consume,
+          transcode: values.transcode,
         });
         console.log(JSON.stringify({ index, file: item.file, ...result }));
       } catch (error) {

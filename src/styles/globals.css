@@ -595,6 +595,9 @@ p {
   flex: 1;
 }
 .player-error {
+  padding: 24px;
+  text-align: center;
+  color: white;
   position: absolute;
   inset: 0;
   display: flex;
@@ -603,6 +606,12 @@ p {
   align-items: center;
   justify-content: center;
   background: #111;
+}
+.player-error p {
+  margin: 0;
+  max-width: 28em;
+  font-size: 14px;
+  line-height: 1.6;
 }
 .player-error button {
   background: white;

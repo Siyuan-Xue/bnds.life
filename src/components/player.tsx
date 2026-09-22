@@ -31,6 +31,7 @@ export function Player({
   const [current, setCurrent] = useState(0);
   const [duration, setDuration] = useState(video.duration);
   const [error, setError] = useState(false);
+  const [unsupported, setUnsupported] = useState(false);
   const [full, setFull] = useState(false);
   const fallbackUrl = video.source;
   const nativeUrl = video.nativeSource?.url;
@@ -39,19 +40,19 @@ export function Player({
   useEffect(() => {
     const element = media.current;
     if (!element) return;
-    setSource(
-      preferredSource(
-        {
-          source: fallbackUrl,
-          nativeSource:
-            nativeUrl && nativeType
-              ? { url: nativeUrl, contentType: nativeType }
-              : undefined,
-        },
-        (type) => element.canPlayType(type),
-      ),
+    const selected = preferredSource(
+      {
+        source: fallbackUrl,
+        nativeSource:
+          nativeUrl && nativeType
+            ? { url: nativeUrl, contentType: nativeType }
+            : undefined,
+      },
+      (type) => element.canPlayType(type),
     );
-    setError(false);
+    setSource(selected);
+    setUnsupported(selected === undefined);
+    setError(selected === undefined);
     setCurrent(0);
     resumeAt.current = 0;
   }, [fallbackUrl, nativeUrl, nativeType]);
@@ -198,22 +199,34 @@ export function Player({
             resumeAt.current = event.currentTarget.currentTime || current;
             setError(false);
             setSource(fallback);
-          } else setError(true);
+          } else {
+            setUnsupported(false);
+            setError(true);
+          }
         }}
       />
       {feed && <div className="feed-scrim" aria-hidden="true" />}
       {error ? (
-        <div className="player-error">
-          视频暂时无法播放
-          <button
-            onClick={() => {
-              setError(false);
-              media.current?.load();
-              play();
-            }}
-          >
-            重新加载
-          </button>
+        <div className="player-error" role="status">
+          <strong>
+            {unsupported ? "当前浏览器无法播放此视频" : "视频暂时无法播放"}
+          </strong>
+          <p>
+            {unsupported
+              ? "可以换用其他浏览器或设备，再试一次。"
+              : "请检查网络连接，或换用其他浏览器再试一次。"}
+          </p>
+          {!unsupported && (
+            <button
+              onClick={() => {
+                setError(false);
+                media.current?.load();
+                play();
+              }}
+            >
+              重新加载
+            </button>
+          )}
         </div>
       ) : (
         !playing && (

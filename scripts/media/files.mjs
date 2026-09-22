@@ -207,7 +207,13 @@ export async function createNativePlayback({ file, output, info }) {
   };
 }
 
-export async function prepareMedia({ file, root, id, poster }) {
+export async function prepareMedia({
+  file,
+  root,
+  id,
+  poster,
+  transcode = false,
+}) {
   if (!uuidPattern.test(id)) throw new Error("无效的视频 ID");
   root = resolve(root);
   file = resolve(file);
@@ -242,7 +248,7 @@ export async function prepareMedia({ file, root, id, poster }) {
       throw new Error("上传文件仍在变化，请等待传输完成后重试");
     const info = await probeMedia(original);
     const v = info.video;
-    const toneMap = hdrToneMapFilter(v);
+    const toneMap = transcode ? hdrToneMapFilter(v) : null;
     const rotation = Number(
       v.side_data_list?.find((d) => d.rotation !== undefined)?.rotation ??
         v.tags?.rotate ??
@@ -265,9 +271,25 @@ export async function prepareMedia({ file, root, id, poster }) {
       fps <= 60 &&
       rotation === 0 &&
       [undefined, "1:1", "N/A"].includes(v.sample_aspect_ratio);
-    const playback = join(work, "playback", "video.mp4");
+    const playback = join(
+      work,
+      "playback",
+      transcode ? "video.mp4" : "native.mp4",
+    );
     let method;
-    {
+    let directNative;
+    if (!transcode) {
+      directNative = await createNativePlayback({
+        file: original,
+        output: playback,
+        info,
+      });
+      if (!directNative)
+        throw new Error(
+          "当前关闭转码，该文件无法无损封装为可播放 MP4；输入文件已保留",
+        );
+      method = "stream-copy";
+    } else {
       const common = [
         "-i",
         original,
@@ -342,13 +364,14 @@ export async function prepareMedia({ file, root, id, poster }) {
     }
     const played = await probeMedia(playback);
     const nativePath = join(work, "playback", "native.mp4");
-    const native = compatible
-      ? null
-      : await createNativePlayback({
-          file: original,
-          output: nativePath,
-          info,
-        });
+    const native =
+      !transcode || compatible
+        ? null
+        : await createNativePlayback({
+            file: original,
+            output: nativePath,
+            info,
+          });
     let cover = join(work, "posters", "cover.jpg");
     let coverMethod = poster ? "custom" : "extracted";
     const warnings = [];
@@ -434,7 +457,9 @@ export async function prepareMedia({ file, root, id, poster }) {
             ? info.metadata
             : kind === "native"
               ? { contentType: native.contentType }
-              : null,
+              : kind === "playback" && directNative
+                ? { contentType: directNative.contentType }
+                : null,
       });
     }
     for (const folder of ["playback", "posters"]) {

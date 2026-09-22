@@ -76,6 +76,7 @@ test(
       ]);
       const before = await hashFile(file);
       const result = await prepareMedia({
+        transcode: true,
         root,
         file,
         id: "00000000-0000-4000-8000-000000000008",
@@ -145,6 +146,7 @@ test(
         gray,
       ]);
       const neutral = await prepareMedia({
+        transcode: true,
         root,
         file: gray,
         id: "00000000-0000-4000-8000-000000000010",

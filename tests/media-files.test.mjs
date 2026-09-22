@@ -5,12 +5,15 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { execFileSync } from "node:child_process";
 import {
-  prepareMedia,
+  prepareMedia as prepareWithMode,
   hashFile,
   requireSpace,
   probeMedia,
   verifyAsset,
 } from "../scripts/media/files.mjs";
+
+const prepareMedia = (options) =>
+  prepareWithMode({ ...options, transcode: true });
 
 test("真实媒体处理：仅保留原片元数据、自动封面、相同比特流复用与按需转码", async () => {
   const root = await mkdtemp(join(tmpdir(), "bnds-media-test-"));
