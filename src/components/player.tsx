@@ -1,11 +1,22 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
 import { formatDuration, type Video } from "~/lib/videos";
 import { Icon } from "./icon";
 import { isPlaybackShortcut } from "~/lib/shortcuts";
 import { videoAspectRatio } from "~/lib/video-layout";
 import { preferredSource } from "~/lib/playback-source";
+import {
+  togglePlayerFullscreen,
+  type NativeFullscreenVideo,
+} from "~/lib/player-fullscreen";
+import { interpretVideoTap, type VideoTap } from "~/lib/player-touch";
 
 export function Player({
   video,
@@ -32,6 +43,14 @@ export function Player({
   const [error, setError] = useState(false);
   const [unsupported, setUnsupported] = useState(false);
   const [full, setFull] = useState(false);
+  const [controlsVisible, setControlsVisible] = useState(false);
+  const [fullscreenError, setFullscreenError] = useState(false);
+  const [seekFeedback, setSeekFeedback] = useState<"back" | "forward">();
+  const lastTap = useRef<VideoTap | null>(null);
+  const lastTouchAt = useRef(0);
+  const controlsTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const feedbackTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const errorTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const playbackUrl = video.source;
   const contentType = video.contentType;
 
@@ -81,10 +100,57 @@ export function Player({
       element.pause();
     }
   }, [play]);
-  const fullscreen = useCallback(() => {
-    if (document.fullscreenElement) void document.exitFullscreen();
-    else void container.current?.requestFullscreen().catch(() => undefined);
+  const showControls = useCallback(() => {
+    setControlsVisible(true);
+    clearTimeout(controlsTimer.current);
+    controlsTimer.current = setTimeout(() => {
+      if (!media.current?.paused) setControlsVisible(false);
+    }, 3200);
   }, []);
+  const seekBy = useCallback(
+    (seconds: number) => {
+      const element = media.current;
+      if (!element) return;
+      const end =
+        Number.isFinite(element.duration) && element.duration > 0
+          ? element.duration
+          : duration;
+      const next = Math.max(0, Math.min(end, element.currentTime + seconds));
+      element.currentTime = next;
+      setCurrent(next);
+      showControls();
+    },
+    [duration, showControls],
+  );
+  const fullscreen = useCallback(() => {
+    const root = container.current;
+    const element = media.current;
+    if (!root || !element) return;
+    setFullscreenError(false);
+    void togglePlayerFullscreen(
+      root,
+      element as HTMLVideoElement & NativeFullscreenVideo,
+      document,
+    ).then((result) => {
+      if (result === "unavailable") {
+        setFullscreenError(true);
+        clearTimeout(errorTimer.current);
+        errorTimer.current = setTimeout(() => setFullscreenError(false), 3500);
+        showControls();
+      } else {
+        setFull(result === "entered");
+      }
+    });
+  }, [showControls]);
+
+  useEffect(
+    () => () => {
+      clearTimeout(controlsTimer.current);
+      clearTimeout(feedbackTimer.current);
+      clearTimeout(errorTimer.current);
+    },
+    [],
+  );
 
   useEffect(() => {
     const element = media.current;
@@ -98,17 +164,31 @@ export function Player({
     if (source && active && !document.hidden && !userPaused.current) play();
   }, [source, active, play]);
   useEffect(() => {
+    const element = media.current;
     const visibility = () => {
       if (document.hidden) media.current?.pause();
       else if (active && !userPaused.current) play();
     };
     const fullChange = () =>
-      setFull(document.fullscreenElement === container.current);
+      setFull(
+        document.fullscreenElement === container.current ||
+          Boolean(
+            (element as NativeFullscreenVideo).webkitDisplayingFullscreen,
+          ),
+      );
+    const nativeEnter = () => setFull(true);
+    const nativeExit = () => setFull(false);
     document.addEventListener("visibilitychange", visibility);
     document.addEventListener("fullscreenchange", fullChange);
+    document.addEventListener("webkitfullscreenchange", fullChange);
+    element?.addEventListener("webkitbeginfullscreen", nativeEnter);
+    element?.addEventListener("webkitendfullscreen", nativeExit);
     return () => {
       document.removeEventListener("visibilitychange", visibility);
       document.removeEventListener("fullscreenchange", fullChange);
+      document.removeEventListener("webkitfullscreenchange", fullChange);
+      element?.removeEventListener("webkitbeginfullscreen", nativeEnter);
+      element?.removeEventListener("webkitendfullscreen", nativeExit);
     };
   }, [active, play]);
   useEffect(() => {
@@ -129,20 +209,18 @@ export function Player({
       }
       if (event.key === "m") setMuted((value) => !value);
       if (event.key === "f") fullscreen();
+      if (event.key === "j" || event.key === "l") {
+        event.preventDefault();
+        seekBy(event.key === "j" ? -10 : 10);
+      }
       if (["ArrowLeft", "ArrowRight"].includes(event.key) && media.current) {
         event.preventDefault();
-        media.current.currentTime = Math.max(
-          0,
-          Math.min(
-            duration,
-            media.current.currentTime + (event.key === "ArrowLeft" ? -5 : 5),
-          ),
-        );
+        seekBy(event.key === "ArrowLeft" ? -5 : 5);
       }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [active, duration, fullscreen, toggle]);
+  }, [active, fullscreen, seekBy, toggle]);
 
   function seek(value: string) {
     if (media.current) {
@@ -153,7 +231,7 @@ export function Player({
   return (
     <div
       ref={container}
-      className={`player ${feed ? "feed-player" : "watch-player"} ${playing ? "is-playing" : "is-paused"}`}
+      className={`player ${feed ? "feed-player" : "watch-player"} ${playing ? "is-playing" : "is-paused"} ${controlsVisible ? "controls-visible" : ""}`}
       data-video-id={video.id}
     >
       <video
@@ -165,11 +243,48 @@ export function Player({
         loop={feed}
         preload={active ? "auto" : "none"}
         aria-label={video.isDemo ? `${video.title}，占位视频` : video.title}
-        onClick={toggle}
-        onDoubleClick={fullscreen}
-        onPlay={() => setPlaying(true)}
-        onPause={() => setPlaying(false)}
-        onEnded={() => setPlaying(false)}
+        onClick={() => {
+          if (!feed && Date.now() - lastTouchAt.current < 700) return;
+          toggle();
+        }}
+        onDoubleClick={() => {
+          if (!window.matchMedia("(pointer: coarse)").matches) fullscreen();
+        }}
+        onPointerUp={(event) => {
+          if (feed || event.pointerType !== "touch") return;
+          const bounds = event.currentTarget.getBoundingClientRect();
+          const now = Date.now();
+          lastTouchAt.current = now;
+          const tap = interpretVideoTap(
+            lastTap.current,
+            (event.clientX - bounds.left) / bounds.width,
+            now,
+          );
+          lastTap.current = tap.nextTap;
+          showControls();
+          if (tap.action !== "controls") {
+            seekBy(tap.action === "back" ? -10 : 10);
+            setSeekFeedback(tap.action);
+            clearTimeout(feedbackTimer.current);
+            feedbackTimer.current = setTimeout(
+              () => setSeekFeedback(undefined),
+              750,
+            );
+          }
+        }}
+        onPlay={() => {
+          setPlaying(true);
+          if (!feed) showControls();
+        }}
+        onPause={() => {
+          setPlaying(false);
+          clearTimeout(controlsTimer.current);
+          setControlsVisible(true);
+        }}
+        onEnded={() => {
+          setPlaying(false);
+          setControlsVisible(true);
+        }}
         onTimeUpdate={(event) => setCurrent(event.currentTarget.currentTime)}
         onVolumeChange={(event) => {
           setMuted(event.currentTarget.muted);
@@ -181,6 +296,19 @@ export function Player({
         }}
       />
       {feed && <div className="feed-scrim" aria-hidden="true" />}
+      {seekFeedback && !feed && (
+        <div
+          className={`seek-feedback seek-feedback-${seekFeedback}`}
+          role="status"
+        >
+          {seekFeedback === "back" ? "快退 10 秒" : "快进 10 秒"}
+        </div>
+      )}
+      {fullscreenError && (
+        <div className="fullscreen-notice" role="status">
+          当前浏览器无法进入全屏
+        </div>
+      )}
       {error ? (
         <div className="player-error" role="status">
           <strong>
@@ -204,13 +332,13 @@ export function Player({
           )}
         </div>
       ) : (
-        !playing && (
+        (!playing || (!feed && controlsVisible)) && (
           <button
             className="center-play"
             onClick={toggle}
-            aria-label="播放视频"
+            aria-label={playing ? "暂停视频" : "播放视频"}
           >
-            <Icon name="play" width={40} height={40} />
+            <Icon name={playing ? "pause" : "play"} width={40} height={40} />
           </button>
         )
       )}
@@ -249,14 +377,17 @@ export function Player({
             step={0.1}
             value={current}
             onChange={(event) => seek(event.target.value)}
+            onPointerDown={showControls}
             aria-label="播放进度"
             aria-valuetext={`${formatDuration(current)} / ${formatDuration(duration)}`}
-            style={{
-              background: `linear-gradient(to right, var(--red) 0%, var(--red) ${(current / (duration || 1)) * 100}%, #ffffff60 ${(current / (duration || 1)) * 100}%, #ffffff60 100%)`,
-            }}
+            style={
+              {
+                "--seek-progress": `${(current / (duration || 1)) * 100}%`,
+              } as CSSProperties
+            }
           />
           {!feed && (
-            <div className="playback-toolbar">
+            <div className="playback-toolbar" onPointerDown={showControls}>
               <button
                 className="icon-button"
                 onClick={toggle}
