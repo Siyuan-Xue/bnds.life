@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Icon } from "./icon";
+import { Moon, Sun } from "lucide-react";
 
 type Theme = "light" | "dark";
 
@@ -34,7 +34,11 @@ export function ThemeToggle() {
       aria-label={theme === "dark" ? "切换为浅色模式" : "切换为深色模式"}
       title={theme === "dark" ? "浅色模式" : "深色模式"}
     >
-      <Icon name={theme === "dark" ? "sun" : "moon"} />
+      {theme === "dark" ? (
+        <Sun size={22} strokeWidth={2} aria-hidden="true" />
+      ) : (
+        <Moon size={22} strokeWidth={2} aria-hidden="true" />
+      )}
     </button>
   );
 }

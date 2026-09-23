@@ -129,6 +129,9 @@ p {
 .theme-toggle {
   color: var(--text);
 }
+.theme-toggle:hover {
+  background: transparent;
+}
 .brand-logo-dark {
   display: none;
 }
