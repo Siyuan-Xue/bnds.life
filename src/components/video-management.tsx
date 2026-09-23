@@ -5,10 +5,19 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import type { Video } from "~/lib/videos";
 import { api } from "~/trpc/react";
 import { isHomeVideo } from "~/lib/video-sections";
+import { destinationAfterOffline } from "~/lib/offline-navigation";
 import { Icon } from "./icon";
 import styles from "./video-management.module.css";
 
-export function VideoManagement({ video }: { video: Video }) {
+export function VideoManagement({
+  video,
+  returnHome = false,
+  nextShortVideoId,
+}: {
+  video: Video;
+  returnHome?: boolean;
+  nextShortVideoId?: string;
+}) {
   const viewer = api.discussion.viewer.useQuery();
   const [open, setOpen] = useState(false);
   if (
@@ -28,7 +37,12 @@ export function VideoManagement({ video }: { video: Video }) {
         <Icon name="wrench" />
       </button>
       {open && (
-        <ManagementDialog video={video} onClose={() => setOpen(false)} />
+        <ManagementDialog
+          video={video}
+          returnHome={returnHome}
+          nextShortVideoId={nextShortVideoId}
+          onClose={() => setOpen(false)}
+        />
       )}
     </div>
   );
@@ -36,9 +50,13 @@ export function VideoManagement({ video }: { video: Video }) {
 
 function ManagementDialog({
   video,
+  returnHome,
+  nextShortVideoId,
   onClose,
 }: {
   video: Video;
+  returnHome: boolean;
+  nextShortVideoId?: string;
   onClose: () => void;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
@@ -73,11 +91,11 @@ function ManagementDialog({
       await utils.invalidate();
       router.refresh();
       setFeaturedMessage(
-        result.isFeatured ? "已加入首页精选" : "已从首页精选移除",
+        result.isFeatured ? "已加入首页经典" : "已从首页经典移除",
       );
     } catch (cause) {
       setError(
-        cause instanceof Error ? cause.message : "精选设置失败，请重试。",
+        cause instanceof Error ? cause.message : "经典设置失败，请重试。",
       );
     }
   }
@@ -106,8 +124,15 @@ function ManagementDialog({
       await offline.mutateAsync({ id: video.id });
       setLeaving(true);
       await utils.invalidate();
-      router.replace("/");
-      router.refresh();
+      const position =
+        returnHome && isHomeVideo(video)
+          ? sessionStorage.getItem("bnds:home-scroll")
+          : null;
+      if (position !== null)
+        sessionStorage.setItem("bnds:restore-home-scroll", position);
+      router.replace(
+        destinationAfterOffline(video, nextShortVideoId, position !== null),
+      );
       onClose();
     } catch (cause) {
       setLeaving(false);
@@ -174,11 +199,11 @@ function ManagementDialog({
       {isHomeVideo(video) && (
         <div className={styles.featured}>
           <div>
-            <h3>首页精选</h3>
+            <h3>首页经典</h3>
             <p role="status">
               {featuredMessage ||
                 (isFeatured
-                  ? "已在首页精选中展示"
+                  ? "已在首页经典中展示"
                   : "将这个视频展示在首页顶部")}
             </p>
           </div>
@@ -190,8 +215,8 @@ function ManagementDialog({
             {feature.isPending
               ? "保存中…"
               : isFeatured
-                ? "移出精选"
-                : "加入精选"}
+                ? "移出经典"
+                : "加入经典"}
           </button>
         </div>
       )}

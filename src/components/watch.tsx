@@ -18,7 +18,17 @@ import { VideoManagement } from "./video-management";
 import { VideoCard } from "./video-card";
 import { VideoDate } from "./video-date";
 
-export function Watch({ video, related }: { video: Video; related: Video[] }) {
+export function Watch({
+  video,
+  related,
+  returnHome = false,
+  nextShortVideoId,
+}: {
+  video: Video;
+  related: Video[];
+  returnHome?: boolean;
+  nextShortVideoId?: string;
+}) {
   const mainRef = useRef<HTMLDivElement>(null);
   const relatedRef = useRef<HTMLElement>(null);
   const [relatedCount, setRelatedCount] = useState(related.length);
@@ -93,7 +103,12 @@ export function Watch({ video, related }: { video: Video; related: Video[] }) {
             <p className="watch-date">
               <VideoDate video={video} />
             </p>
-            <VideoManagement key={`manage-${video.id}`} video={video} />
+            <VideoManagement
+              key={`manage-${video.id}`}
+              video={video}
+              returnHome={returnHome}
+              nextShortVideoId={nextShortVideoId}
+            />
           </div>
           <Story video={video} />
           <Discussion
@@ -105,7 +120,12 @@ export function Watch({ video, related }: { video: Video; related: Video[] }) {
       </div>
       <aside className="related-videos" aria-label="更多视频" ref={relatedRef}>
         {related.slice(0, relatedCount).map((item) => (
-          <VideoCard key={item.id} video={item} compact />
+          <VideoCard
+            key={item.id}
+            video={item}
+            compact
+            returnHome={returnHome}
+          />
         ))}
       </aside>
     </div>

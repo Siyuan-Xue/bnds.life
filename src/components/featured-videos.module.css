@@ -10,15 +10,15 @@
   font-weight: 700;
 }
 .strip {
-  overflow-x: auto;
-  scrollbar-width: none;
-  padding-bottom: 8px;
+  min-width: 0;
 }
-.strip::-webkit-scrollbar {
-  display: none;
+.viewport {
+  overflow: hidden;
+  padding-bottom: 8px;
+  touch-action: pan-y pinch-zoom;
 }
 @media (hover: hover) and (pointer: fine) and (aspect-ratio > 1/1) {
-  .strip {
+  .viewport {
     /* Room for lifted cards without shifting the surrounding layout. */
     padding: 16px 12px 24px;
     margin: -16px -12px;
@@ -27,17 +27,15 @@
 .track {
   display: flex;
   gap: 20px;
-  width: max-content;
+  align-items: flex-start;
 }
-.group {
-  display: grid;
-  flex: 0 0 auto;
-  grid-auto-flow: column;
-  grid-auto-columns: clamp(220px, 24vw, 360px);
-  gap: 20px;
-}
-.group > article {
+.slide {
+  flex: 0 0 clamp(220px, 24vw, 360px);
   min-width: 0;
+}
+.card {
+  transform: scale(var(--classic-scale, 1));
+  transform-origin: center center;
 }
 .empty {
   margin: 0;

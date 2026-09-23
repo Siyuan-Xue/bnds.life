@@ -7,17 +7,20 @@ export function VideoCard({
   video,
   compact = false,
   tabIndex,
+  returnHome = false,
 }: {
   video: Video;
   compact?: boolean;
   tabIndex?: number;
+  returnHome?: boolean;
 }) {
   const Heading = compact ? "h2" : "h3";
+  const href = `/watch/${video.id}${returnHome ? "?from=home" : ""}`;
   return (
     <article className={`video-card ${compact ? "compact-card" : ""}`}>
       <Link
         className="thumbnail"
-        href={`/watch/${video.id}`}
+        href={href}
         aria-label={`观看：${video.title}`}
         tabIndex={tabIndex}
       >
@@ -34,7 +37,7 @@ export function VideoCard({
       <div className="video-card-info">
         <div className="video-card-copy">
           <Heading>
-            <Link href={`/watch/${video.id}`} tabIndex={tabIndex}>
+            <Link href={href} tabIndex={tabIndex}>
               {video.title}
             </Link>
           </Heading>

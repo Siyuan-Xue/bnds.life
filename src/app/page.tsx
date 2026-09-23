@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { FeaturedVideos } from "~/components/featured-videos";
 import { VideoTimeline } from "~/components/video-timeline";
+import { RestoreHomeScroll } from "~/components/restore-home-scroll";
 import { listHomeVideos } from "~/server/videos";
 
 export default async function Home({
@@ -16,6 +17,7 @@ export default async function Home({
   const videos = await listHomeVideos();
   return (
     <div className="home-page">
+      <RestoreHomeScroll />
       <h1 className="sr-only">首页</h1>
       <FeaturedVideos videos={videos.filter((video) => video.isFeatured)} />
       {videos.length ? (

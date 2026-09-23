@@ -6,11 +6,11 @@ export default async function RecommendPage({
   searchParams: Promise<{ v?: string | string[] }>;
 }) {
   const params = await searchParams;
+  const startId = typeof params.v === "string" ? params.v : undefined;
   return (
     <Recommend
-      videos={await recommendVideos(
-        typeof params.v === "string" ? params.v : undefined,
-      )}
+      key={startId ?? "start"}
+      videos={await recommendVideos(startId)}
     />
   );
 }

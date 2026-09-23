@@ -218,9 +218,21 @@ export function Recommend({ videos }: { videos: Video[] }) {
                     </p>
                   )}
                   <div className="feed-caption-title">
-                    <Link href={`/watch/${video.id}`}>{video.title}</Link>
+                    <Link
+                      href={`/watch/${video.id}?next=${videos[(index + 1) % videos.length]?.id ?? ""}`}
+                    >
+                      {video.title}
+                    </Link>
                     {index === active && (
-                      <VideoManagement key={video.id} video={video} />
+                      <VideoManagement
+                        key={video.id}
+                        video={video}
+                        nextShortVideoId={
+                          videos.length > 1
+                            ? videos[(index + 1) % videos.length]?.id
+                            : undefined
+                        }
+                      />
                     )}
                   </div>
                 </div>

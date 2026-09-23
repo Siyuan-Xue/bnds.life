@@ -26,7 +26,7 @@ export function VideoTimeline({ videos }: { videos: Video[] }) {
             </div>
             <div className="video-grid">
               {videos.map((video) => (
-                <VideoCard key={video.id} video={video} />
+                <VideoCard key={video.id} video={video} returnHome />
               ))}
             </div>
           </section>

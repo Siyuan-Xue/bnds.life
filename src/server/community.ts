@@ -323,7 +323,7 @@ export function createCommunity(db: typeof database) {
     ) {
       await official(userId);
       const parsed = featuredInput.safeParse(raw);
-      if (!parsed.success) throw bad("请检查视频和精选状态");
+      if (!parsed.success) throw bad("请检查视频和经典状态");
       const input = parsed.data;
       return db.transaction(async (tx) => {
         // Share the offline operation's row lock so a waiting feature request
@@ -350,7 +350,7 @@ export function createCommunity(db: typeof database) {
             .where(eq(videoAssets.videoId, input.id));
           const video = publicVideo(row, assets);
           if (!video || !isHomeVideo(video))
-            throw bad("仅超过 60 秒的已发布视频可以加入首页精选");
+            throw bad("仅超过 60 秒的已发布视频可以加入首页经典");
         }
         await tx
           .update(mediaVideos)
