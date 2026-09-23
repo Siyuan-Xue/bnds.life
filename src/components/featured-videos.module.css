@@ -2,12 +2,32 @@
   margin-bottom: 32px;
 }
 .heading {
-  margin-bottom: 16px;
+  margin-bottom: 12px;
+  padding-top: 8px;
 }
 .section h2 {
+  position: relative;
   margin: 0;
-  font-size: 20px;
-  font-weight: 700;
+  width: fit-content;
+  padding-right: 0.22em;
+  font-family: "Yuanti SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-size: clamp(38px, 4vw, 56px);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.04em;
+}
+.section h2 span {
+  color: var(--orange-text);
+}
+.section h2::after {
+  position: absolute;
+  top: 0.13em;
+  right: 0;
+  width: 0.13em;
+  height: 0.13em;
+  border-radius: 50%;
+  background: var(--orange);
+  content: "";
 }
 .strip {
   min-width: 0;
@@ -39,6 +59,12 @@
   transform-origin: center center;
 }
 @media (max-width: 600px) {
+  .heading {
+    padding-inline: 12px;
+  }
+  .section h2 {
+    font-size: 38px;
+  }
   .strip {
     --classic-width: 72vw;
   }

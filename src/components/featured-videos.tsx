@@ -117,7 +117,9 @@ export function FeaturedVideos({ videos }: { videos: Video[] }) {
   return (
     <section className={styles.section} aria-labelledby={headingId}>
       <div className={styles.heading}>
-        <h2 id={headingId}>经典</h2>
+        <h2 id={headingId}>
+          经<span>典</span>
+        </h2>
       </div>
       {videos.length ? (
         <Carousel
