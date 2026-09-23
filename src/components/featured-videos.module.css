@@ -11,13 +11,13 @@
   width: fit-content;
   padding-right: 0.22em;
   font-family: "Arial Black", "Helvetica Neue", Arial, sans-serif;
-  font-size: clamp(46px, 5vw, 72px);
+  font-size: clamp(32px, 3vw, 40px);
   font-weight: 900;
-  line-height: 1.05;
-  letter-spacing: -0.07em;
+  line-height: 1.1;
+  letter-spacing: -0.05em;
 }
 .section h2 span {
-  color: var(--orange-text);
+  color: var(--orange);
 }
 .section h2::after {
   position: absolute;
@@ -65,7 +65,7 @@
     padding-inline: 12px;
   }
   .section h2 {
-    font-size: 46px;
+    font-size: 30px;
   }
   .strip {
     --classic-width: 72vw;
