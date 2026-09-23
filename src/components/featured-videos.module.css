@@ -11,10 +11,11 @@
 }
 .strip {
   min-width: 0;
+  --classic-width: clamp(260px, 32vw, 500px);
 }
 .viewport {
   overflow: hidden;
-  padding-bottom: 8px;
+  padding: 16px 0 24px;
   touch-action: pan-y pinch-zoom;
 }
 @media (hover: hover) and (pointer: fine) and (aspect-ratio > 1/1) {
@@ -26,16 +27,24 @@
 }
 .track {
   display: flex;
-  gap: 20px;
-  align-items: flex-start;
+  align-items: center;
+  gap: clamp(16px, 2vw, 28px);
 }
 .slide {
-  flex: 0 0 clamp(220px, 24vw, 360px);
+  flex: 0 0 var(--classic-width);
   min-width: 0;
 }
 .card {
   transform: scale(var(--classic-scale, 1));
   transform-origin: center center;
+}
+@media (max-width: 600px) {
+  .strip {
+    --classic-width: 72vw;
+  }
+  .strip .card :global(.thumbnail) {
+    border-radius: 12px;
+  }
 }
 .empty {
   margin: 0;

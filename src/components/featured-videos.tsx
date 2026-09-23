@@ -61,13 +61,19 @@ export function FeaturedVideos({ videos }: { videos: Video[] }) {
     const updateScale = () => {
       const viewport = carousel.rootNode().getBoundingClientRect();
       const center = viewport.left + viewport.width / 2;
+      const firstSlide = carousel.slideNodes()[0];
+      if (!firstSlide) return;
+      const width = firstSlide.getBoundingClientRect().width;
+      const gap =
+        parseFloat(getComputedStyle(carousel.containerNode()).columnGap) || 0;
+      const pitch = Math.max(1, width + gap);
       for (const slide of carousel.slideNodes()) {
         const card = slide.firstElementChild as HTMLElement | null;
         if (!card) continue;
         const bounds = slide.getBoundingClientRect();
         const distance = Math.abs(bounds.left + bounds.width / 2 - center);
         const scale = canScroll
-          ? Math.max(0.8, 1 - 0.1 * (distance / bounds.width))
+          ? Math.max(0.66, 1.08 - 0.23 * (distance / pitch))
           : 1;
         card.style.setProperty("--classic-scale", scale.toFixed(3));
       }
