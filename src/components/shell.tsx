@@ -7,6 +7,7 @@ import { Icon } from "./icon";
 import { BrandLogo } from "./brand-logo";
 import { AccountMenu } from "./account-menu";
 import { MOBILE_LAYOUT_QUERY } from "~/lib/video-layout";
+import { ThemeToggle } from "./theme-toggle";
 
 export function Shell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -109,6 +110,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
           >
             <Icon name="search" />
           </button>
+          <ThemeToggle />
           <AccountMenu />
         </div>
       </header>

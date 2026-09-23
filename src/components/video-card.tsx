@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { formatDuration, type Video } from "~/lib/videos";
 import { VideoDate } from "./video-date";
+import { videoPlaybackHref } from "~/lib/video-navigation";
 
 export function VideoCard({
   video,
@@ -15,7 +16,7 @@ export function VideoCard({
   returnHome?: boolean;
 }) {
   const Heading = compact ? "h2" : "h3";
-  const href = `/watch/${video.id}${returnHome ? "?from=home" : ""}`;
+  const href = videoPlaybackHref(video, returnHome);
   return (
     <article className={`video-card ${compact ? "compact-card" : ""}`}>
       <Link

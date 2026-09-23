@@ -22,16 +22,16 @@ export function Watch({
   video,
   related,
   returnHome = false,
-  nextShortVideoId,
 }: {
   video: Video;
   related: Video[];
   returnHome?: boolean;
-  nextShortVideoId?: string;
 }) {
   const mainRef = useRef<HTMLDivElement>(null);
   const relatedRef = useRef<HTMLElement>(null);
   const [relatedCount, setRelatedCount] = useState(related.length);
+  const [mobileCount, setMobileCount] = useState(8);
+  const [mobileLayout, setMobileLayout] = useState(false);
   const [geometry, setGeometry] = useState<{ source: string; ratio: number }>();
   const rememberRatio = useCallback((source: string, ratio: number) => {
     setGeometry((previous) =>
@@ -48,8 +48,10 @@ export function Watch({
     if (!main || !list || !layout) return;
 
     const updateCount = () => {
-      if (!window.matchMedia("(min-width: 1000px)").matches) {
-        setRelatedCount(related.length);
+      const narrow = !window.matchMedia("(min-width: 1000px)").matches;
+      setMobileLayout(narrow);
+      if (narrow) {
+        setRelatedCount(Math.min(mobileCount, related.length));
         return;
       }
       const card = list.firstElementChild;
@@ -82,7 +84,7 @@ export function Watch({
       observer.disconnect();
       window.removeEventListener("resize", updateCount);
     };
-  }, [related]);
+  }, [mobileCount, related]);
   return (
     <div
       className="watch-layout"
@@ -107,7 +109,6 @@ export function Watch({
               key={`manage-${video.id}`}
               video={video}
               returnHome={returnHome}
-              nextShortVideoId={nextShortVideoId}
             />
           </div>
           <Story video={video} />
@@ -127,6 +128,15 @@ export function Watch({
             returnHome={returnHome}
           />
         ))}
+        {mobileLayout && relatedCount < related.length && (
+          <button
+            type="button"
+            className="related-more"
+            onClick={() => setMobileCount((count) => count + 8)}
+          >
+            查看更多视频
+          </button>
+        )}
       </aside>
     </div>
   );

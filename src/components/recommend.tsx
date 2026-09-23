@@ -15,6 +15,7 @@ import { VideoManagement } from "./video-management";
 import { Icon } from "./icon";
 import { Player } from "./player";
 import { isPlaybackShortcut } from "~/lib/shortcuts";
+import { videoPlaybackHref } from "~/lib/video-navigation";
 import {
   MOBILE_LAYOUT_QUERY,
   recommendationAspectRatio,
@@ -218,11 +219,7 @@ export function Recommend({ videos }: { videos: Video[] }) {
                     </p>
                   )}
                   <div className="feed-caption-title">
-                    <Link
-                      href={`/watch/${video.id}?next=${videos[(index + 1) % videos.length]?.id ?? ""}`}
-                    >
-                      {video.title}
-                    </Link>
+                    <Link href={videoPlaybackHref(video)}>{video.title}</Link>
                     {index === active && (
                       <VideoManagement
                         key={video.id}

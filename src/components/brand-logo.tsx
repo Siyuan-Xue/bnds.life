@@ -1,8 +1,4 @@
-export function BrandLogo({
-  background = "light",
-}: {
-  background?: "light" | "dark";
-}) {
+export function BrandLogo() {
   return (
     <svg
       className="brand-mark"
@@ -11,11 +7,14 @@ export function BrandLogo({
       focusable="false"
     >
       <image
-        href={
-          background === "dark"
-            ? "/brand/logo-dark.png"
-            : "/brand/logo-transparent.png"
-        }
+        className="brand-logo-light"
+        href="/brand/logo-transparent.png"
+        width="1937"
+        height="812"
+      />
+      <image
+        className="brand-logo-dark"
+        href="/brand/logo-dark.png"
         width="1937"
         height="812"
       />
