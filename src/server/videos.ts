@@ -8,7 +8,8 @@ import {
   recommendVideos as demoRecommend,
   type Video,
 } from "~/lib/videos";
-import { publicVideo, orderRecommendations } from "~/lib/media-catalog";
+import { publicVideo } from "~/lib/media-catalog";
+import { orderRecommendations } from "~/lib/recommendation-order";
 import { isHomeVideo, isShortVideo } from "~/lib/video-sections";
 
 export async function listVideos(query = ""): Promise<Video[]> {

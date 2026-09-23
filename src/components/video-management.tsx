@@ -131,7 +131,14 @@ function ManagementDialog({
       if (position !== null)
         sessionStorage.setItem("bnds:restore-home-scroll", position);
       router.replace(
-        destinationAfterOffline(video, nextShortVideoId, position !== null),
+        destinationAfterOffline(
+          video,
+          nextShortVideoId,
+          position !== null,
+          returnHome && sessionStorage.getItem("bnds:home-order") === "asc"
+            ? "asc"
+            : "desc",
+        ),
       );
       onClose();
     } catch (cause) {

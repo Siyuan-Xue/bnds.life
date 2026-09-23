@@ -1,3 +1,5 @@
+import { orderRecommendations } from "./recommendation-order.ts";
+
 export type Video = {
   id: string;
   title: string;
@@ -82,15 +84,7 @@ export function findVideo(id: string): Video | undefined {
 }
 
 export function recommendVideos(startId?: string): Video[] {
-  // Stable preview order; this is not a personalized recommendation algorithm.
-  const order = [1, 4, 0, 7, 3, 10, 2, 8, 5, 11, 6, 9];
-  const result = order
-    .map((index) => videos[index])
-    .filter((video): video is Video => Boolean(video));
-  const start = result.findIndex((video) => video.id === startId);
-  return start > 0
-    ? [...result.slice(start), ...result.slice(0, start)]
-    : result;
+  return orderRecommendations(videos, startId);
 }
 
 export function formatDuration(seconds: number): string {

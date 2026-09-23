@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { normalizeRecordedDate } from "../src/lib/recorded-date.ts";
-import { publicVideo, orderRecommendations } from "../src/lib/media-catalog.ts";
+import { publicVideo } from "../src/lib/media-catalog.ts";
+import { orderRecommendations } from "../src/lib/recommendation-order.ts";
 import { groupVideosByMonth } from "../src/lib/video-timeline.ts";
 
 test("拍摄日期保留精度并拒绝不存在的日期", () => {
@@ -57,12 +58,18 @@ test("公开条目只包含已发布可播放资源且不泄露原片信息", ()
   );
 });
 
-test("真实推荐覆盖任意长度目录且保持起始视频", () => {
+test("随机短拍覆盖任意长度目录，并保持指定起始视频", () => {
   const entries = Array.from({ length: 350 }, (_, i) => ({ id: `v-${i}` }));
-  const result = orderRecommendations(entries, "v-200");
+  const result = orderRecommendations(entries, "v-200", () => 0);
+  const alternate = orderRecommendations(entries, "v-200", () => 0.5);
   assert.equal(result[0].id, "v-200");
   assert.equal(new Set(result.map((v) => v.id)).size, 350);
+  assert.notDeepEqual(result, alternate);
   assert.notDeepEqual(result, entries);
+  assert.deepEqual(
+    entries.map((v) => v.id),
+    Array.from({ length: 350 }, (_, i) => `v-${i}`),
+  );
 });
 
 const published = {

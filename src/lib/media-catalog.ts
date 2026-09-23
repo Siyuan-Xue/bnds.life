@@ -82,22 +82,3 @@ export function publicVideo(
       : {}),
   };
 }
-
-export function orderRecommendations<T extends { id: string }>(
-  videos: T[],
-  startId?: string,
-): T[] {
-  // Stable ordering independent of dates, without splitting the catalog by aspect ratio.
-  const hash = (value: string) =>
-    Array.from(value).reduce(
-      (n, c) => Math.imul(n ^ c.charCodeAt(0), 16777619) >>> 0,
-      2166136261,
-    );
-  const sorted = [...videos].sort(
-    (a, b) => hash(a.id) - hash(b.id) || a.id.localeCompare(b.id),
-  );
-  const start = sorted.findIndex((v) => v.id === startId);
-  return start > 0
-    ? [...sorted.slice(start), ...sorted.slice(0, start)]
-    : sorted;
-}

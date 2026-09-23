@@ -7,8 +7,15 @@ export function RestoreHomeScroll() {
     const root = document.querySelector(".home-page");
     const rememberPosition = (event: Event) => {
       const target = event.target;
-      if (target instanceof Element && target.closest('a[href*="from=home"]'))
+      if (target instanceof Element && target.closest('a[href*="from=home"]')) {
         sessionStorage.setItem("bnds:home-scroll", String(window.scrollY));
+        sessionStorage.setItem(
+          "bnds:home-order",
+          new URLSearchParams(window.location.search).get("order") === "asc"
+            ? "asc"
+            : "desc",
+        );
+      }
     };
     root?.addEventListener("click", rememberPosition);
     const saved = sessionStorage.getItem("bnds:restore-home-scroll");

@@ -1,5 +1,6 @@
 import { Recommend } from "~/components/recommend";
 import { recommendVideos } from "~/server/videos";
+export const dynamic = "force-dynamic";
 export default async function RecommendPage({
   searchParams,
 }: {
