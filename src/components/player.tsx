@@ -5,7 +5,7 @@ import { formatDuration, type Video } from "~/lib/videos";
 import { Icon } from "./icon";
 import { isPlaybackShortcut } from "~/lib/shortcuts";
 import { videoAspectRatio } from "~/lib/video-layout";
-import { preferredSource, fallbackSource } from "~/lib/playback-source";
+import { preferredSource } from "~/lib/playback-source";
 
 export function Player({
   video,
@@ -23,7 +23,6 @@ export function Player({
   const media = useRef<HTMLVideoElement>(null);
   const container = useRef<HTMLDivElement>(null);
   const userPaused = useRef(false);
-  const resumeAt = useRef(0);
   const [source, setSource] = useState<string>();
   const [playing, setPlaying] = useState(false);
   const [muted, setMuted] = useState(false);
@@ -33,29 +32,21 @@ export function Player({
   const [error, setError] = useState(false);
   const [unsupported, setUnsupported] = useState(false);
   const [full, setFull] = useState(false);
-  const fallbackUrl = video.source;
-  const nativeUrl = video.nativeSource?.url;
-  const nativeType = video.nativeSource?.contentType;
+  const playbackUrl = video.source;
+  const contentType = video.contentType;
 
   useEffect(() => {
     const element = media.current;
     if (!element) return;
     const selected = preferredSource(
-      {
-        source: fallbackUrl,
-        nativeSource:
-          nativeUrl && nativeType
-            ? { url: nativeUrl, contentType: nativeType }
-            : undefined,
-      },
+      { source: playbackUrl, contentType },
       (type) => element.canPlayType(type),
     );
     setSource(selected);
     setUnsupported(selected === undefined);
     setError(selected === undefined);
     setCurrent(0);
-    resumeAt.current = 0;
-  }, [fallbackUrl, nativeUrl, nativeType]);
+  }, [playbackUrl, contentType]);
 
   useEffect(() => {
     const element = media.current;
@@ -184,25 +175,9 @@ export function Player({
           setMuted(event.currentTarget.muted);
           setVolume(event.currentTarget.volume);
         }}
-        onLoadedMetadata={(event) => {
-          if (resumeAt.current > 0) {
-            event.currentTarget.currentTime = Math.min(
-              resumeAt.current,
-              event.currentTarget.duration,
-            );
-            resumeAt.current = 0;
-          }
-        }}
-        onError={(event) => {
-          const fallback = fallbackSource(video, source);
-          if (fallback) {
-            resumeAt.current = event.currentTarget.currentTime || current;
-            setError(false);
-            setSource(fallback);
-          } else {
-            setUnsupported(false);
-            setError(true);
-          }
+        onError={() => {
+          setUnsupported(false);
+          setError(true);
         }}
       />
       {feed && <div className="feed-scrim" aria-hidden="true" />}

@@ -6,7 +6,7 @@ import { join, resolve } from "node:path";
 import { tmpdir } from "node:os";
 import { prepareMedia, probeMedia } from "../scripts/media/files.mjs";
 import { publicVideo } from "../src/lib/media-catalog.ts";
-import { preferredSource, fallbackSource } from "../src/lib/playback-source.ts";
+import { preferredSource } from "../src/lib/playback-source.ts";
 
 test("default import creates one lossless native MP4, metadata and poster only", async () => {
   const root = await mkdtemp(join(tmpdir(), "bnds-native-only-"));
@@ -37,7 +37,7 @@ test("default import creates one lossless native MP4, metadata and poster only",
       },
       result.assets,
     );
-    assert.equal(video.nativeSource.url, video.source);
+    assert.match(video.contentType, /avc1/);
     assert.equal(
       preferredSource(video, () => ""),
       undefined,
@@ -46,7 +46,6 @@ test("default import creates one lossless native MP4, metadata and poster only",
       preferredSource(video, () => "probably"),
       video.source,
     );
-    assert.equal(fallbackSource(video, video.source), undefined);
   } finally {
     await rm(root, { recursive: true, force: true });
   }

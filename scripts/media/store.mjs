@@ -1,14 +1,8 @@
 import { randomUUID } from "node:crypto";
 import {
   readFile,
-  copyFile,
-  lstat,
   realpath,
   unlink,
-  mkdtemp,
-  rename,
-  chmod,
-  stat,
   rm,
 } from "node:fs/promises";
 import { basename, resolve, sep, join } from "node:path";
@@ -19,7 +13,6 @@ import {
   verifyAsset,
   verifyOriginalMetadata,
   uuidPattern,
-  createNativePlayback,
 } from "./files.mjs";
 
 async function transaction(conn, operation) {
@@ -62,6 +55,7 @@ export async function migrate(sql) {
         "001-media.sql",
         "002-native-playback.sql",
         "004-video-deletion.sql",
+        "005-native-only.sql",
       ].map((name) =>
         readFile(
           new URL(`../../ops/migrations/${name}`, import.meta.url),
@@ -106,14 +100,14 @@ export async function importVideo(sql, options) {
     ...options,
     title: options.title ?? basename(file).replace(/\.[^.]+$/, ""),
   });
-  if (options.consume) {
-    if (
-      !(await realpath(file)).startsWith(
-        (await realpath(resolve(root, "incoming"))) + sep,
-      )
-    )
-      throw new Error("--consume 仅允许清理 incoming 目录内的文件");
-  }
+  const incomingRoot = await realpath(resolve(root, "incoming")).catch(
+    () => null,
+  );
+  const consume =
+    incomingRoot !== null &&
+    (await realpath(file)).startsWith(incomingRoot + sep);
+  if (options.consume && !consume)
+    throw new Error("--consume 仅允许清理 incoming 目录内的文件");
   return withMediaLock(sql, async (conn) => {
     const sourceSha256 = await hashFile(file);
     const [existing] =
@@ -133,7 +127,7 @@ export async function importVideo(sql, options) {
       throw error;
     }
     if (existing) {
-      if (options.consume) {
+      if (consume) {
         const assets =
           await conn`SELECT * FROM video_assets WHERE video_id=${existing.id}`;
         if (
@@ -186,7 +180,7 @@ export async function importVideo(sql, options) {
           await rm(join(root, folder, id), { recursive: true, force: true });
       throw error;
     }
-    if (options.consume) {
+    if (consume) {
       if ((await hashFile(file)) !== sourceSha256)
         prepared.warnings.push(
           "incoming 文件已变化，未清理；服务器仅保留播放文件与原片元数据",
@@ -235,56 +229,6 @@ export async function setStatus(sql, root, id, status) {
   );
 }
 
-// Backfill existing videos without changing their titles, dates, publication or fallback.
-export async function addNativePlayback(sql, root, id, options = {}) {
-  if (!uuidPattern.test(id)) throw new Error("无效的视频 ID");
-  return withMediaLock(sql, async (conn) => {
-    const [allowed] =
-      await conn`SELECT id,source_sha256 FROM videos WHERE id=${id} AND NOT EXISTS (SELECT 1 FROM deleted_video_sources WHERE source_sha256=videos.source_sha256)`;
-    if (!allowed) throw new Error("视频不存在或已申请永久删除");
-    const assets = await conn`SELECT * FROM video_assets WHERE video_id=${id}`;
-    if (assets.some((a) => a.kind === "native"))
-      return { id, skipped: "already-present" };
-    const original = assets.find((a) => a.kind === "original");
-    const fallback = assets.find((a) => a.kind === "playback");
-    if (!original || !fallback) throw new Error("缺少原片或兼容播放资源");
-    if (["reuse", "remux", "stream-copy"].includes(fallback.processing_method))
-      return { id, skipped: "already-lossless" };
-    verifyOriginalMetadata(original, allowed.source_sha256);
-    const input = options.file
-      ? resolve(options.file)
-      : resolve(root, original.object_key);
-    if (!options.file) {
-      try {
-        await verifyAsset(root, { ...original, kind: "source-file" });
-      } catch (error) {
-        if (error.code === "ENOENT")
-          throw new Error("服务器不保留原片，请提供 --file");
-        throw error;
-      }
-    }
-    if (!(await lstat(input)).isFile()) throw new Error("只接受普通原片文件");
-    const work = await mkdtemp(join(root, ".work", `${id}-native-`));
-    try {
-      const file = join(work, "source");
-      await copyFile(input, file);
-      if ((await hashFile(file)) !== allowed.source_sha256)
-        throw new Error("原片校验不一致");
-      const output = join(work, "native.mp4");
-      const result = await createNativePlayback({ file, output });
-      if (!result) return { id, skipped: "unsupported-codec" };
-      const sha256 = await hashFile(output);
-      const objectKey = `playback/${id}/native-${sha256}.mp4`;
-      await chmod(output, 0o644);
-      const size = (await stat(output)).size;
-      await rename(output, join(root, objectKey));
-      await conn`INSERT INTO video_assets ${conn({ id: randomUUID(), video_id: id, kind: "native", object_key: objectKey, original_filename: null, mime_type: "video/mp4", size_bytes: size, sha256, width: result.info.video.width, height: result.info.video.height, duration_ms: Math.round(result.info.duration * 1000), processing_method: "stream-copy", metadata: conn.json({ contentType: result.contentType }) })}`;
-      return { id, native: objectKey };
-    } finally {
-      await rm(work, { recursive: true, force: true });
-    }
-  });
-}
 export async function editVideo(sql, id, options) {
   if (!uuidPattern.test(id)) throw new Error("无效的视频 ID");
   const details = validatedDetails(options, { partial: true });

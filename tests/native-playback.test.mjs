@@ -126,7 +126,7 @@ test("原画无损封装保留 HEVC、HLG、旋转和音视频比特流，去除
   }
 });
 
-test("公开目录带原画源与兼容源，但不公开归档原片或相机元数据", () => {
+test("公开目录只使用 native 播放资源，不暴露相机元数据", () => {
   const row = {
     id: "abc",
     title: "视频",
@@ -135,27 +135,24 @@ test("公开目录带原画源与兼容源，但不公开归档原片或相机�
     recordedDate: null,
   };
   const assets = [
-    { kind: "playback", objectKey: "playback/abc/video.mp4", durationMs: 1000 },
-    { kind: "poster", objectKey: "posters/abc/cover.jpg" },
     {
-      kind: "native",
+      kind: "playback",
       objectKey: "playback/abc/native.mp4",
+      durationMs: 1000,
       metadata: { contentType: 'video/mp4; codecs="hvc1"', gps: "secret" },
     },
+    { kind: "poster", objectKey: "posters/abc/cover.jpg" },
   ];
-  assert.deepEqual(publicVideo(row, assets).nativeSource, {
-    url: "/media/playback/abc/native.mp4",
-    contentType: 'video/mp4; codecs="hvc1"',
-  });
+  assert.equal(publicVideo(row, assets).contentType, 'video/mp4; codecs="hvc1"');
   assert.equal(
     publicVideo(row, assets).source,
-    "/media/playback/abc/video.mp4",
+    "/media/playback/abc/native.mp4",
   );
   assert.equal(
     publicVideo(row, [
-      ...assets.slice(0, 2),
-      { ...assets[2], objectKey: "originals/abc/source.mov" },
-    ]).nativeSource,
+      { ...assets[0], objectKey: "originals/abc/source.mov" },
+      assets[1],
+    ]),
     undefined,
   );
 });

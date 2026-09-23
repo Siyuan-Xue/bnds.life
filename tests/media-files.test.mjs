@@ -5,17 +5,14 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { execFileSync } from "node:child_process";
 import {
-  prepareMedia as prepareWithMode,
+  prepareMedia,
   hashFile,
   requireSpace,
   probeMedia,
   verifyAsset,
 } from "../scripts/media/files.mjs";
 
-const prepareMedia = (options) =>
-  prepareWithMode({ ...options, transcode: true });
-
-test("真实媒体处理：仅保留原片元数据、自动封面、相同比特流复用与按需转码", async () => {
+test("仅生成无损播放文件与封面，保留来源元数据但不归档原片", async () => {
   const root = await mkdtemp(join(tmpdir(), "bnds-media-test-"));
   try {
     const file = resolve("public/media/placeholder-landscape.mp4");
@@ -58,7 +55,7 @@ test("真实媒体处理：仅保留原片元数据、自动封面、相同比�
     });
     assert.equal(
       second.assets.find((a) => a.kind === "playback").processingMethod,
-      "reuse",
+      "stream-copy",
     );
     assert.equal(
       await hashFile(
@@ -79,7 +76,7 @@ test("真实媒体处理：仅保留原片元数据、自动封面、相同比�
     });
     assert.equal(
       remuxed.assets.find((a) => a.kind === "playback").processingMethod,
-      "remux",
+      "stream-copy",
     );
     const tagged = join(root, "tagged.mp4");
     execFileSync("ffmpeg", [
@@ -122,14 +119,13 @@ test("真实媒体处理：仅保留原片元数据、自动封面、相同比�
       "mpeg4",
       avi,
     ]);
-    const third = await prepareMedia({
-      root,
-      id: "00000000-0000-4000-8000-000000000003",
-      file: avi,
-    });
-    assert.equal(
-      third.assets.find((a) => a.kind === "playback").processingMethod,
-      "transcode",
+    await assert.rejects(
+      prepareMedia({
+        root,
+        id: "00000000-0000-4000-8000-000000000003",
+        file: avi,
+      }),
+      /无法无损封装/,
     );
     assert.equal(await hashFile(file), before);
     const broken = join(root, "broken.mp4");

@@ -10,7 +10,6 @@ import {
   importVideo,
   setStatus,
   editVideo,
-  addNativePlayback,
 } from "./media/store.mjs";
 
 const { values, positionals } = parseArgs({
@@ -25,7 +24,6 @@ const { values, positionals } = parseArgs({
     root: { type: "string" },
     publish: { type: "boolean", default: false },
     consume: { type: "boolean", default: false },
-    transcode: { type: "boolean", default: false },
     help: { type: "boolean", short: "h" },
   },
 });
@@ -38,14 +36,12 @@ if (values.help || !command) {
   pnpm media import --file /path/video.mp4 [--title 标题] [--date 2021-06-03] [--story-file story.txt] [--poster cover.jpg] [--publish] [--consume]
   pnpm media batch --manifest /path/batch.json [--publish] [--consume]
   pnpm media list
-  pnpm media native UUID --file /path/source.mov  使用原片补充无损原画源
-  pnpm media native [UUID]  检查已有原画；缺少源文件时明确报错
   pnpm media edit UUID [--title 标题] [--date 日期或空字符串] [--story-file story.txt]
   pnpm media publish UUID
   pnpm media hide UUID
   --root 可覆盖 MEDIA_ROOT。默认仅导入草稿；未知拍摄日期请留空。
-  默认只生成 native.mp4 无损封装；无法封装则保留输入并报错。--transcode 可显式恢复兼容转码。
-  --consume 在成功入库并复核哈希后删除 incoming；服务器不保留原片。重复文件仅在已有播放资源通过完整性校验后删除。`);
+  只生成 native.mp4 无损封装；无法封装则报错，不生成其他视频版本。
+  incoming 内的输入成功入库并复核哈希后自动删除；服务器不归档原片。重复文件仅在已有播放资源通过完整性校验后删除。`);
   process.exit(0);
 }
 let sql;
@@ -89,17 +85,6 @@ try {
         2,
       ),
     );
-  } else if (command === "native") {
-    if (values.file && !id) throw new Error("使用 --file 时必须指定视频 UUID");
-    const rows = id
-      ? [{ id }]
-      : await sql`SELECT id FROM videos ORDER BY created_at`;
-    for (const row of rows)
-      console.log(
-        JSON.stringify(
-          await addNativePlayback(sql, root, row.id, { file: values.file }),
-        ),
-      );
   } else if (command === "import" || command === "edit") {
     const story =
       values["story-file"] !== undefined
@@ -114,7 +99,6 @@ try {
       poster: values.poster,
       publish: values.publish,
       consume: values.consume,
-      transcode: values.transcode,
     };
     if (command === "import" && !values.file) throw new Error("请指定 --file");
     console.log(
@@ -146,7 +130,6 @@ try {
           poster: item.poster ? resolve(base, item.poster) : undefined,
           publish: values.publish,
           consume: values.consume,
-          transcode: values.transcode,
         });
         console.log(JSON.stringify({ index, file: item.file, ...result }));
       } catch (error) {

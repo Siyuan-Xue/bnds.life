@@ -2,7 +2,6 @@ import { createReadStream } from "node:fs";
 import {
   access,
   chmod,
-  copyFile,
   lstat,
   mkdir,
   mkdtemp,
@@ -17,7 +16,6 @@ import { createHash } from "node:crypto";
 import { basename, extname, join, resolve, sep } from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { hdrToneMapFilter } from "./color.mjs";
 import { mp4VideoCodec } from "./codec.mjs";
 
 const execute = promisify(execFile);
@@ -29,14 +27,13 @@ export async function hashFile(file) {
   return hash.digest("hex");
 }
 export function requireSpace(size, available) {
-  if (available < size * 3 + 10 * 1024 ** 3)
+  if (available < size * 1.25 + 10 * 1024 ** 3)
     throw new Error("磁盘空间不足：需预留处理空间及 10 GiB 余量");
 }
 export async function initializeRoot(root) {
   await mkdir(root, { recursive: true, mode: 0o755 });
   for (const [name, mode] of [
     ["incoming", 0o700],
-    ["originals", 0o700],
     [".work", 0o700],
     ["playback", 0o755],
     ["posters", 0o755],
@@ -212,7 +209,6 @@ export async function prepareMedia({
   root,
   id,
   poster,
-  transcode = false,
 }) {
   if (!uuidPattern.test(id)) throw new Error("无效的视频 ID");
   root = resolve(root);
@@ -223,7 +219,7 @@ export async function prepareMedia({
   const input = await stat(file);
   const fs = await statfs(root);
   requireSpace(input.size, fs.bavail * fs.bsize);
-  for (const kind of ["originals", "playback", "posters"]) {
+  for (const kind of ["playback", "posters"]) {
     try {
       await access(join(root, kind, id));
       throw new Error("视频目录已经存在，拒绝覆盖");
@@ -234,144 +230,20 @@ export async function prepareMedia({
   const work = await mkdtemp(join(root, ".work", `${id}-`));
   const installed = [];
   try {
-    for (const kind of ["originals", "playback", "posters"])
+    for (const kind of ["playback", "posters"])
       await mkdir(join(work, kind), {
-        mode: kind === "originals" ? 0o700 : 0o755,
+        mode: 0o755,
       });
     const extension = /^\.[a-zA-Z0-9]{1,8}$/.test(extname(file))
       ? extname(file).toLowerCase()
       : ".bin";
-    const original = join(work, "originals", `source${extension}`);
-    await copyFile(file, original);
-    const sourceSha256 = await hashFile(original);
-    if (sourceSha256 !== (await hashFile(file)))
-      throw new Error("上传文件仍在变化，请等待传输完成后重试");
-    const info = await probeMedia(original);
-    const v = info.video;
-    const toneMap = transcode ? hdrToneMapFilter(v) : null;
-    const rotation = Number(
-      v.side_data_list?.find((d) => d.rotation !== undefined)?.rotation ??
-        v.tags?.rotate ??
-        0,
-    );
-    const [n, d] = String(v.avg_frame_rate ?? "0/1")
-      .split("/")
-      .map(Number);
-    const fps = d ? n / d : 0;
-    const bitrate =
-      Number(info.metadata.format?.bit_rate) ||
-      (input.size * 8) / info.duration;
-    const compatible =
-      !toneMap &&
-      v.codec_name === "h264" &&
-      v.pix_fmt === "yuv420p" &&
-      (!info.audio || info.audio.codec_name === "aac") &&
-      Math.max(v.width, v.height) <= 1920 &&
-      bitrate <= 8_000_000 &&
-      fps <= 60 &&
-      rotation === 0 &&
-      [undefined, "1:1", "N/A"].includes(v.sample_aspect_ratio);
-    const playback = join(
-      work,
-      "playback",
-      transcode ? "video.mp4" : "native.mp4",
-    );
-    let method;
-    let directNative;
-    if (!transcode) {
-      directNative = await createNativePlayback({
-        file: original,
-        output: playback,
-        info,
-      });
-      if (!directNative)
-        throw new Error(
-          "当前关闭转码，该文件无法无损封装为可播放 MP4；输入文件已保留",
-        );
-      method = "stream-copy";
-    } else {
-      const common = [
-        "-i",
-        original,
-        "-map",
-        "0:v:0",
-        "-map",
-        "0:a:0?",
-        "-map_metadata",
-        "-1",
-        "-map_chapters",
-        "-1",
-      ];
-      if (compatible) {
-        await ffmpeg([
-          ...common,
-          "-c",
-          "copy",
-          "-movflags",
-          "+faststart",
-          playback,
-        ]);
-        method = "remux";
-        // Keep the verified remux output; the temporary source is discarded.
-        if ((await hashFile(playback)) === sourceSha256) method = "reuse";
-      } else {
-        const scale =
-          "scale=w='trunc(iw*sar/2)*2':h=ih,setsar=1,scale=w='min(1920,iw)':h='min(1920,ih)':force_original_aspect_ratio=decrease:force_divisible_by=2";
-        await ffmpeg([
-          ...common,
-          "-vf",
-          [toneMap, scale, fps > 60 ? "fps=60" : null]
-            .filter(Boolean)
-            .join(","),
-          ...(toneMap
-            ? [
-                "-color_primaries",
-                "bt709",
-                "-color_trc",
-                "bt709",
-                "-colorspace",
-                "bt709",
-                "-color_range",
-                "tv",
-              ]
-            : []),
-          "-c:v",
-          "libx264",
-          "-preset",
-          "medium",
-          "-crf",
-          "20",
-          "-maxrate",
-          "8M",
-          "-bufsize",
-          "16M",
-          "-pix_fmt",
-          "yuv420p",
-          "-threads",
-          "2",
-          "-c:a",
-          "aac",
-          "-b:a",
-          "160k",
-          "-ac",
-          "2",
-          "-movflags",
-          "+faststart",
-          playback,
-        ]);
-        method = toneMap ? "hlg-to-sdr" : "transcode";
-      }
-    }
+    const sourceSha256 = await hashFile(file);
+    const info = await probeMedia(file);
+    const playback = join(work, "playback", "native.mp4");
+    const native = await createNativePlayback({ file, output: playback, info });
+    if (!native)
+      throw new Error("该文件无法无损封装为可播放 MP4；未生成播放文件");
     const played = await probeMedia(playback);
-    const nativePath = join(work, "playback", "native.mp4");
-    const native =
-      !transcode || compatible
-        ? null
-        : await createNativePlayback({
-            file: original,
-            output: nativePath,
-            info,
-          });
     let cover = join(work, "posters", "cover.jpg");
     let coverMethod = poster ? "custom" : "extracted";
     const warnings = [];
@@ -417,15 +289,12 @@ export async function prepareMedia({
     for (const [kind, path, mime, processingMethod, probe] of [
       [
         "original",
-        original,
+        file,
         extension === ".mp4" ? "video/mp4" : "application/octet-stream",
         "original",
         info,
       ],
-      ["playback", playback, "video/mp4", method, played],
-      ...(native
-        ? [["native", nativePath, "video/mp4", "stream-copy", native.info]]
-        : []),
+      ["playback", playback, "video/mp4", "stream-copy", played],
       [
         "poster",
         cover,
@@ -434,7 +303,7 @@ export async function prepareMedia({
         null,
       ],
     ]) {
-      await chmod(path, 0o644);
+      if (kind !== "original") await chmod(path, 0o644);
       const folder =
         kind === "original"
           ? "originals"
@@ -455,11 +324,9 @@ export async function prepareMedia({
         metadata:
           kind === "original"
             ? info.metadata
-            : kind === "native"
+            : kind === "playback"
               ? { contentType: native.contentType }
-              : kind === "playback" && directNative
-                ? { contentType: directNative.contentType }
-                : null,
+              : null,
       });
     }
     for (const folder of ["playback", "posters"]) {
@@ -467,6 +334,8 @@ export async function prepareMedia({
       await rename(join(work, folder), destination);
       installed.push(destination);
     }
+    if ((await hashFile(file)) !== sourceSha256)
+      throw new Error("上传文件仍在变化，请等待传输完成后重试");
     return { sourceSha256, assets, warnings };
   } catch (error) {
     for (const path of installed)

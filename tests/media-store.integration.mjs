@@ -9,15 +9,11 @@ import { execFileSync } from "node:child_process";
 import { sourceReceipts } from "../scripts/media/source-retention.mjs";
 import {
   migrate,
-  importVideo as importWithMode,
+  importVideo,
   setStatus,
   editVideo,
   withMediaLock,
-  addNativePlayback,
 } from "../scripts/media/store.mjs";
-
-const importVideo = (sql, options) =>
-  importWithMode(sql, { ...options, transcode: true });
 
 test("隔离数据库：迁移幂等、重复导入保留编辑、显式发布隐藏与缺失资源拒绝发布", async () => {
   assert.ok(process.env.DATABASE_URL, "需要专用测试连接或 .env");
@@ -133,34 +129,12 @@ test("隔离数据库：迁移幂等、重复导入保留编辑、显式发布�
           await sql`SELECT count(*) FROM video_assets WHERE video_id=${second.id}`
         )[0].count,
       ),
-      4,
+      3,
     );
     await setStatus(sql, root, second.id, "published");
-    await sql`DELETE FROM video_assets WHERE video_id=${second.id} AND kind='native'`;
-    await assert.rejects(
-      addNativePlayback(sql, root, second.id),
-      /服务器不保留原片.*--file/,
-    );
-    await assert.rejects(
-      addNativePlayback(sql, root, second.id, {
-        file: resolve("public/media/placeholder-landscape.mp4"),
-      }),
-      /校验不一致/,
-    );
-    assert.ok(
-      (await addNativePlayback(sql, root, second.id, { file: hevc })).native,
-    );
     assert.equal(
-      (await addNativePlayback(sql, root, second.id)).skipped,
-      "already-present",
-    );
-    assert.equal(
-      Number(
-        (
-          await sql`SELECT count(*) FROM video_assets WHERE video_id=${second.id}`
-        )[0].count,
-      ),
-      4,
+      (await sql`SELECT object_key FROM video_assets WHERE video_id=${second.id} AND kind='playback'`)[0].object_key,
+      `playback/${second.id}/native.mp4`,
     );
     assert.equal(
       (await sql`SELECT status FROM videos WHERE id=${second.id}`)[0].status,
@@ -172,7 +146,6 @@ test("隔离数据库：迁移幂等、重复导入保留编辑、显式发布�
     const duplicateConsumed = await importVideo(sql, {
       root,
       file: incoming,
-      consume: true,
     });
     assert.equal(duplicateConsumed.duplicate, true);
     await assert.rejects(stat(incoming), { code: "ENOENT" });
@@ -205,7 +178,7 @@ test("隔离数据库：迁移幂等、重复导入保留编辑、显式发布�
       "comment=new source",
       direct,
     ]);
-    const third = await importWithMode(sql, {
+    const third = await importVideo(sql, {
       root,
       file: direct,
       publish: true,

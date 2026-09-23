@@ -82,7 +82,7 @@ const playableAssets = (original, playback) => [
   { kind: "poster", objectKey: "posters/cover.jpg" },
 ];
 
-test("分类时长保留毫秒，优先原片以免转码尾帧改变60秒边界", () => {
+test("分类时长保留毫秒，优先使用拍摄文件记录的时长", () => {
   for (const [original, playback, seconds] of [
     [59999, 60020, 59.999],
     [60000, 60020, 60],
