@@ -10,11 +10,11 @@
   margin: 0;
   width: fit-content;
   padding-right: 0.22em;
-  font-family: "Yuanti SC", "PingFang SC", "Microsoft YaHei", sans-serif;
-  font-size: clamp(38px, 4vw, 56px);
-  font-weight: 800;
-  line-height: 1.15;
-  letter-spacing: -0.04em;
+  font-family: "Arial Black", "Helvetica Neue", Arial, sans-serif;
+  font-size: clamp(46px, 5vw, 72px);
+  font-weight: 900;
+  line-height: 1.05;
+  letter-spacing: -0.07em;
 }
 .section h2 span {
   color: var(--orange-text);
@@ -32,6 +32,7 @@
 .strip {
   min-width: 0;
   --classic-width: clamp(260px, 32vw, 500px);
+  --classic-gap: clamp(16px, 2vw, 28px);
 }
 .viewport {
   overflow: hidden;
@@ -48,11 +49,12 @@
 .track {
   display: flex;
   align-items: center;
-  gap: clamp(16px, 2vw, 28px);
 }
 .slide {
-  flex: 0 0 var(--classic-width);
+  /* Include spacing in each slide so Embla keeps it at the loop seam. */
+  flex: 0 0 calc(var(--classic-width) + var(--classic-gap));
   min-width: 0;
+  padding-inline: calc(var(--classic-gap) / 2);
 }
 .card {
   transform: scale(var(--classic-scale, 1));
@@ -63,7 +65,7 @@
     padding-inline: 12px;
   }
   .section h2 {
-    font-size: 38px;
+    font-size: 46px;
   }
   .strip {
     --classic-width: 72vw;

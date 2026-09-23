@@ -117,8 +117,8 @@ export function FeaturedVideos({ videos }: { videos: Video[] }) {
   return (
     <section className={styles.section} aria-labelledby={headingId}>
       <div className={styles.heading}>
-        <h2 id={headingId}>
-          经<span>典</span>
+        <h2 id={headingId} lang="en">
+          For <span>You</span>
         </h2>
       </div>
       {videos.length ? (
@@ -132,7 +132,7 @@ export function FeaturedVideos({ videos }: { videos: Video[] }) {
           }}
           plugins={plugins}
           setApi={setCarousel}
-          aria-label="经典视频"
+          aria-label="For You 视频"
           onDragStart={(event) => event.preventDefault()}
         >
           <CarouselContent
@@ -160,7 +160,7 @@ export function FeaturedVideos({ videos }: { videos: Video[] }) {
         </Carousel>
       ) : (
         <p className={styles.empty}>
-          还没有经典视频。打开视频的“管理视频”即可添加。
+          还没有内容。打开视频的“管理视频”即可添加。
         </p>
       )}
     </section>
