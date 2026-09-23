@@ -217,10 +217,12 @@ export function Recommend({ videos }: { videos: Video[] }) {
                       <span className="feed-sample">占位预览</span>
                     </p>
                   )}
-                  <Link href={`/watch/${video.id}`}>{video.title}</Link>
-                  {index === active && (
-                    <VideoManagement key={video.id} video={video} />
-                  )}
+                  <div className="feed-caption-title">
+                    <Link href={`/watch/${video.id}`}>{video.title}</Link>
+                    {index === active && (
+                      <VideoManagement key={video.id} video={video} />
+                    )}
+                  </div>
                 </div>
                 <div className="feed-actions">
                   <button

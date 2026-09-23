@@ -93,8 +93,8 @@ export function Watch({ video, related }: { video: Video; related: Video[] }) {
             <p className="watch-date">
               <VideoDate video={video} />
             </p>
+            <VideoManagement key={`manage-${video.id}`} video={video} />
           </div>
-          <VideoManagement key={`manage-${video.id}`} video={video} />
           <Story video={video} />
           <Discussion
             key={`comments-${video.id}`}

@@ -6,7 +6,13 @@ import { api } from "~/trpc/react";
 import { Discussion } from "./discussion";
 import { Icon } from "./icon";
 
-function StoryContent({ video }: { video: Video }) {
+function StoryContent({
+  video,
+  onClose,
+}: {
+  video: Video;
+  onClose?: () => void;
+}) {
   const demo = video.isDemo === true || video.id.startsWith("memory-");
   const viewer = api.discussion.viewer.useQuery();
   const stories = api.discussion.stories.useQuery(
@@ -16,7 +22,7 @@ function StoryContent({ video }: { video: Video }) {
   const story = stories.data?.[0];
   const text = story?.body ?? video.story?.trim() ?? "";
   const [editing, setEditing] = useState(false);
-  return (
+  const body = (
     <>
       {editing && viewer.data?.isOfficial ? (
         <StoryEditor
@@ -31,15 +37,6 @@ function StoryContent({ video }: { video: Video }) {
           <p className={text ? "story-text" : "story-empty"}>
             {text || "这段回忆的故事，待续。"}
           </p>
-          {viewer.data?.isOfficial && !demo && (
-            <button
-              className="text-button story-edit-button"
-              disabled={stories.isPending || stories.isError}
-              onClick={() => setEditing(true)}
-            >
-              {story ? "编辑故事" : "添加故事"}
-            </button>
-          )}
         </>
       )}
       {stories.isError && (
@@ -53,6 +50,50 @@ function StoryContent({ video }: { video: Video }) {
           </button>
         </p>
       )}
+    </>
+  );
+  return (
+    <>
+      <div className="story-header">
+        <h2>故事</h2>
+        {viewer.data?.isOfficial && !demo && !editing && (
+          <button
+            className="icon-button admin-action story-edit-button"
+            aria-label={story ? "编辑故事" : "添加故事"}
+            title={story ? "编辑故事" : "添加故事"}
+            disabled={stories.isPending || stories.isError}
+            onClick={() => setEditing(true)}
+          >
+            <Icon name="pencil" />
+          </button>
+        )}
+        {onClose && (
+          <button
+            className="icon-button story-close-button"
+            aria-label="关闭故事"
+            onClick={onClose}
+          >
+            <Icon name="close" />
+          </button>
+        )}
+      </div>
+      <div className="story-body" tabIndex={onClose ? 0 : undefined}>
+        {onClose ? (
+          <>
+            <section aria-label="故事">
+              <h3>{video.title}</h3>
+              {body}
+            </section>
+            <Discussion
+              key={`comments-${video.id}`}
+              videoId={video.id}
+              demo={demo}
+            />
+          </>
+        ) : (
+          body
+        )}
+      </div>
     </>
   );
 }
@@ -128,12 +169,7 @@ function StoryEditor({
 export function Story({ video }: { video: Video }) {
   return (
     <section className="story story-inline" aria-label="故事">
-      <div className="story-header">
-        <h2>故事</h2>
-      </div>
-      <div className="story-body">
-        <StoryContent key={video.id} video={video} />
-      </div>
+      <StoryContent key={video.id} video={video} />
     </section>
   );
 }
@@ -145,26 +181,9 @@ export function StoryPanel({
   video: Video;
   onClose: () => void;
 }) {
-  const demo = video.isDemo === true || video.id.startsWith("memory-");
   return (
     <div className="story story-panel">
-      <div className="story-header">
-        <h2>故事</h2>
-        <button className="icon-button" aria-label="关闭故事" onClick={onClose}>
-          <Icon name="close" />
-        </button>
-      </div>
-      <div className="story-body" tabIndex={0}>
-        <section aria-label="故事">
-          <h3>{video.title}</h3>
-          <StoryContent key={video.id} video={video} />
-        </section>
-        <Discussion
-          key={`comments-${video.id}`}
-          videoId={video.id}
-          demo={demo}
-        />
-      </div>
+      <StoryContent key={video.id} video={video} onClose={onClose} />
     </div>
   );
 }

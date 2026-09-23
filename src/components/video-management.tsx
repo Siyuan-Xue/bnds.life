@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import type { Video } from "~/lib/videos";
 import { api } from "~/trpc/react";
 import { isHomeVideo } from "~/lib/video-sections";
+import { Icon } from "./icon";
 import styles from "./video-management.module.css";
 
 export function VideoManagement({ video }: { video: Video }) {
@@ -18,8 +19,13 @@ export function VideoManagement({ video }: { video: Video }) {
     return null;
   return (
     <div className="video-management">
-      <button className="text-button" onClick={() => setOpen(true)}>
-        管理视频
+      <button
+        className="icon-button admin-action"
+        aria-label="管理视频"
+        title="管理视频"
+        onClick={() => setOpen(true)}
+      >
+        <Icon name="wrench" />
       </button>
       {open && (
         <ManagementDialog video={video} onClose={() => setOpen(false)} />

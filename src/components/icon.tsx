@@ -19,6 +19,9 @@ const paths = {
   chevron: "m6 9 6 6 6-6",
   sort: "M3 6h18M3 12h12M3 18h6",
   back: "m12 5-7 7 7 7M5 12h16",
+  wrench:
+    "M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.1-3.1a6 6 0 0 1-8.3 8.3l-7.2 7.2a2 2 0 0 1-2.8-2.8l7.2-7.2a6 6 0 0 1 8.3-8.3z",
+  pencil: "M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z",
 } as const;
 
 export type IconName = keyof typeof paths | keyof typeof suppliedIcons;
