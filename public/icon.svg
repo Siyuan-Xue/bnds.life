@@ -5,21 +5,15 @@
   <path fill="#006ECF" d="M62 32 32 62 32 52 52 32Z"/>
   <path fill="#73B338" d="M32 62 2 32 12 32 32 52Z"/>
   <defs>
-    <clipPath id="pause">
+    <clipPath id="pause-bars">
       <rect x="22" y="21" width="7" height="22" rx="2"/>
       <rect x="35" y="21" width="7" height="22" rx="2"/>
     </clipPath>
   </defs>
-  <g clip-path="url(#pause)">
-    <path fill="#FF8500" d="M22 21h7v11h-7z"/>
-    <path fill="#006ECF" d="M22 32h7v11h-7z"/>
-    <path fill="#73B338" d="M35 21h7v11h-7z"/>
-    <path fill="#F22A1A" d="M35 32h7v11h-7z"/>
-  </g>
-  <g fill="none" stroke-width="3.5" stroke-linecap="round">
-    <path stroke="#FF8500" d="m27 27 5 5"/>
-    <path stroke="#F22A1A" d="m32 32 5 5"/>
-    <path stroke="#73B338" d="m37 27-5 5"/>
-    <path stroke="#006ECF" d="m32 32-5 5"/>
+  <g clip-path="url(#pause-bars)">
+    <rect x="22" y="21" width="7" height="22" fill="#73B338"/>
+    <rect x="35" y="21" width="7" height="22" fill="#F22A1A"/>
+    <path fill="#FF8500" d="M0 0h64v12L32 32 0 12Z"/>
+    <path fill="#006ECF" d="M0 52 32 32l32 20v12H0Z"/>
   </g>
 </svg>
