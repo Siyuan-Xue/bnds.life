@@ -20,7 +20,7 @@ journalctl -u bndslife-media-cleanup.service -n 100
 
 脚本位于 `/srv/bnds-life/media-tools` 对应的发布目录；`bnds-media migrate` 应用媒体迁移 001、002 和 004，网页账户、评论等其他迁移按网站部署流程单独执行。
 
-服务以拥有媒体目录的 `ubuntu` 用户运行，读取 `/srv/bnds-life/shared/.env`，固定使用 `MEDIA_ROOT=/srv/bnds-life/media`，系统文件只读，只有媒体目录允许写入。网页服务不需要新增原片目录访问权限。
+服务以拥有媒体目录的 `<SSH_USER>` 用户运行，读取 `/srv/bnds-life/shared/.env`，固定使用 `MEDIA_ROOT=/srv/bnds-life/media`，系统文件只读，只有媒体目录允许写入。网页服务不需要新增原片目录访问权限。
 
 保留期由 `MEDIA_CLEANUP_RETENTION_DAYS` 配置，默认 `7`，只接受非负整数。手工运行同样遵守此默认值，不会自动绕过保留期。`0` 表示在下一次脚本执行时处理所有符合状态要求的下线任务，不代表网页立即删除。
 

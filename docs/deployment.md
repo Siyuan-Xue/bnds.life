@@ -1,6 +1,6 @@
 # SSH 部署记录
 
-2026-09-20：当前网站通过 [https://xuesiyuan.com.cn](https://xuesiyuan.com.cn) 访问，应用版本为 `e7b4b69`。`bnds.life` 正在备案，按用户要求暂时使用已备案的 `xuesiyuan.com.cn`。原 IP 地址 [http://<SERVER_IP>](http://<SERVER_IP>) 保留。源码保存在现有私有仓库 `Siyuan-Xue/bnds.life` 的 `main`。
+2026-09-20：当前网站通过 [https://xuesiyuan.com.cn](https://xuesiyuan.com.cn) 访问，应用版本为 `e7b4b69`。`bnds.life` 正在备案，按用户要求暂时使用已备案的 `xuesiyuan.com.cn`。原 IP 地址 `http://<SERVER_IP>` 保留。源码保存在现有私有仓库 `Siyuan-Xue/bnds.life` 的 `main`。
 
 ## 服务器与运行方式
 
@@ -75,7 +75,7 @@ HTTPS 首页、推荐、观看页、图标、目录与空会话 API 均返回 20
 
 ## 首条真实视频与曝光修正（2026-09-20）
 
-15:15 首条真实视频上线，current 切换到 releases/503be7a，VIDEO_CATALOG_MODE=database，媒体 Nginx 映射启用。首条 UUID be3e040d-1424-4ab6-8503-8d25e83ab628，时长 55.564 秒；按文件名显示日期、时间标题。HTTPS、Range 206、私有目录 404 及真实画面验收通过。切换配置备份 /srv/bnds-life/backups/<BACKUP_ID>。
+15:15 首条真实视频上线，current 切换到 releases/503be7a，VIDEO_CATALOG_MODE=database，媒体 Nginx 映射启用。首条 UUID be3e040d-1424-4ab6-8503-8d25e83ab628，时长 55.564 秒；按文件名显示日期、时间标题。HTTPS、Range 206、私有目录 404 及真实画面验收通过。切换配置备份 `/srv/bnds-life/backups/<BACKUP_ID>`。
 
 用户发现 HDR→SDR 过曝后，已暂停队列、定位 Mobius 曲线抬高中间亮度，改用经过同帧 Apple forceSDR 对照的 Hable；15:43 首条播放版和封面重新生成并更新为内容哈希 URL，原片保持相同 SHA256。详情见 [色彩修正](hdr-color-correction.md)。
 
@@ -92,4 +92,4 @@ HTTPS 首页、推荐、观看页、图标、目录与空会话 API 均返回 20
 
 运行增量迁移 002 后，为三条补建 native 资源；音视频流按 SHA256 验证无损，HEVC Main 10、HLG、Dolby Vision 8.4 和旋转信息保留，原片归档未改动。所有原画源和兼容源 HTTPS Range 均为 206；首页、推荐、观看页和封面为 200，原片私有目录维持 404。服务器 21 项测试、隔离数据库集成测试、类型检查及生产构建通过。浏览器首页显示三条，实际观看页已选择 native 资源并播放。
 
-迁移前备份 /srv/bnds-life/backups/<BACKUP_ID>；切换后备份 /srv/bnds-life/backups/<BACKUP_ID>。原应用 ce8a6fd 与兼容资源保留。首批导入 systemd 任务以 success 退出，本次清单已完成；未设置监视后续文件的常驻任务。
+迁移前备份 `/srv/bnds-life/backups/<BACKUP_ID>`；切换后备份 `/srv/bnds-life/backups/<BACKUP_ID>`。原应用 ce8a6fd 与兼容资源保留。首批导入 systemd 任务以 success 退出，本次清单已完成；未设置监视后续文件的常驻任务。
