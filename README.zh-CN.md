@@ -1,10 +1,10 @@
-<!-- 术语表（修改中文版前请先对照）：BNDS.life · 十一小日子 为品牌名，不翻译；短拍=推荐页短视频流（/recommend）；故事=官方为视频撰写的说明文字；精选=首页 official 精选；official=官方账号角色，保持英文；下线=take down；媒体导入=media import；Next.js、App Router、tRPC、Better Auth、Drizzle、PostgreSQL、Nginx、systemd、Let's Encrypt 等名称不翻译。人称统一用“你”，引号统一用「」。 -->
+<!-- 术语表（修改中文版前请先对照）：产品名统一写作 bnds.life（全小写，中英文一致），不再使用中文名；短拍=推荐页短视频流（/recommend）；故事=官方为视频撰写的说明文字；精选=首页 official 精选；official=官方账号角色，保持英文；下线=take down；媒体导入=media import；Next.js、App Router、tRPC、Better Auth、Drizzle、PostgreSQL、Nginx、systemd、Let's Encrypt 等名称不翻译。人称统一用“你”，引号统一用「」。 -->
 
 <div align="center">
 
-<a href="https://bnds.life"><img src="public/brand/logo-transparent.png" alt="BNDS.life 标志" width="360"></a>
+<a href="https://bnds.life"><img src="public/brand/logo-transparent.png" alt="bnds.life 标志" width="360"></a>
 
-# BNDS.life · 十一小日子
+# bnds.life
 
 ### 记录校园日常的视频站：长视频按月成册，短视频上下滑动，每段影像都有它的故事
 
@@ -20,7 +20,7 @@
 
 </div>
 
-<!-- 截图位：docs/screenshots/home.png（首页时间线，电脑端浅色模式，16:9 PNG，约 1600 × 900；除非已取得同意，请选用无法辨认具体人物的画面）。添加方式：<a href="https://bnds.life"><img src="docs/screenshots/home.png" alt="BNDS.life 首页时间线" width="100%"></a> -->
+<!-- 截图位：docs/screenshots/home.png（首页时间线，电脑端浅色模式，16:9 PNG，约 1600 × 900；除非已取得同意，请选用无法辨认具体人物的画面）。添加方式：<a href="https://bnds.life"><img src="docs/screenshots/home.png" alt="bnds.life 首页时间线" width="100%"></a> -->
 <!-- GIF 位（可选）：docs/media/demo.gif（浏览、播放，再进入短拍；宽约 800 px，10～20 秒，小于 10 MB） -->
 
 ## ✨ 功能特性

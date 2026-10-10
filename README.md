@@ -1,8 +1,8 @@
 <div align="center">
 
-<a href="https://bnds.life"><img src="public/brand/logo-transparent.png" alt="BNDS.life logo" width="360"></a>
+<a href="https://bnds.life"><img src="public/brand/logo-transparent.png" alt="bnds.life logo" width="360"></a>
 
-# BNDS.life · 十一小日子
+# bnds.life
 
 ### A campus-life video site: a monthly timeline of longer videos, a swipeable short-clip feed, and a story behind every video
 
@@ -18,7 +18,7 @@
 
 </div>
 
-<!-- screenshot slot: docs/screenshots/home.png (home timeline, desktop, light mode, 16:9 PNG, about 1600 x 900; no identifiable people unless you have consent). Add as <a href="https://bnds.life"><img src="docs/screenshots/home.png" alt="BNDS.life home timeline" width="100%"></a> -->
+<!-- screenshot slot: docs/screenshots/home.png (home timeline, desktop, light mode, 16:9 PNG, about 1600 x 900; no identifiable people unless you have consent). Add as <a href="https://bnds.life"><img src="docs/screenshots/home.png" alt="bnds.life home timeline" width="100%"></a> -->
 <!-- GIF slot (optional): docs/media/demo.gif (browse, play, then the 短拍 feed; about 800 px wide, 10 to 20 s, under 10 MB) -->
 
 ## ✨ Features
