@@ -1,4 +1,4 @@
-<!-- 术语表（修改中文版前请先对照）：产品名统一写作 bnds.life（全小写，中英文一致），不再使用中文名；短拍=推荐页短视频流（/recommend）；故事=官方为视频撰写的说明文字；精选=首页 official 精选；official=官方账号角色，保持英文；下线=take down；媒体导入=media import；Next.js、App Router、tRPC、Better Auth、Drizzle、PostgreSQL、Nginx、systemd、Let's Encrypt 等名称不翻译。人称统一用“你”，引号统一用「」。 -->
+<!-- 术语表（修改中文版前请先对照）：产品名统一写作 bnds.life（全小写，中英文一致），不再使用中文名；长拍=超过 60 秒的长视频（英文版写作 long videos）；短拍=60 秒以内的短视频及其竖向信息流（/recommend，英文版写作 shorts）；For You 保持英文；故事=官方为视频撰写的说明文字；精选=首页 official 精选；official=官方账号角色，保持英文；下线=take down；媒体导入=media import；Next.js、App Router、tRPC、Better Auth、Drizzle、PostgreSQL、Nginx、systemd、Let's Encrypt 等名称不翻译。人称统一用“你”，引号统一用「」。 -->
 
 <div align="center">
 
@@ -6,7 +6,7 @@
 
 # bnds.life
 
-### 记录校园日常的视频站：长视频按月成册，短视频上下滑动，每段影像都有它的故事
+### 记录校园日常的视频站：精选推荐、长拍按月成册、短拍上下滑动，每段影像都有它的故事
 
 <a href="./README.md">English</a> · <b>简体中文</b>
 
@@ -20,23 +20,29 @@
 
 </div>
 
-<!-- 截图位：docs/screenshots/home.png（首页时间线，电脑端浅色模式，16:9 PNG，约 1600 × 900；除非已取得同意，请选用无法辨认具体人物的画面）。添加方式：<a href="https://bnds.life"><img src="docs/screenshots/home.png" alt="bnds.life 首页时间线" width="100%"></a> -->
+<!-- 截图位：docs/screenshots/home.png（首页：For You 轮播和第一个月份的长拍；电脑端浅色模式，宽约 1600 px，人脸已模糊）。添加方式：<a href="https://bnds.life"><img src="docs/screenshots/home.png" alt="bnds.life 首页与 For You 精选" width="100%"></a> -->
 <!-- GIF 位（可选）：docs/media/demo.gif（浏览、播放，再进入短拍；宽约 800 px，10～20 秒，小于 10 MB） -->
 
 ## ✨ 功能特性
 
-- 🗓️ **按月成册**（`/`）：时长超过 60 秒的视频按拍摄月份分组，最新的在前；顶部展示 official 精选。
-- 📱 **短拍**（`/recommend`）：60 秒以内的短视频竖向排列，可用滚动、方向键或按钮切换，只播放当前一条；画幅在 9:16 到 16:9 之间自适应。
-- 📖 **一段视频，一个故事**（`/watch/[id]`）：播放器旁附有官方撰写的故事；电脑端在视频侧边展开，手机端以抽屉形式弹出。
-- 💬 **账号与评论**：邮箱加密码即可注册。普通用户可以评论和回复；official 负责撰写故事、修改视频信息、管理精选和下线视频。
-- 🔎 **全站搜索**（`/search?q=`）：搜索全部视频，不受首页和短拍分类限制。
+bnds.life 上的视频分为两类：**长拍**（超过 60 秒）和**短拍**（60 秒以内）。
+
+- ⭐ **For You 精选**（`/`）：首页顶部的轮播，展示由 official 账号亲手挑选、最值得推荐的视频。
+- 🗓️ **长拍按月成册**（`/`）：精选下方，长拍按拍摄月份分组（如「2023年8月」），可在「从新到旧」和「从旧到新」之间切换。
+- 📖 **观看页与故事**（`/watch/[id]`）：播放器下方是这段视频的故事，右侧是接下来可以看的视频；手机端的故事以抽屉形式弹出。
+- 📱 **短拍**（`/recommend`）：竖向排列的短视频流，上下滑动或滚动就能一条接一条地看，也可以用方向键或屏幕按钮切换；只播放当前一条，每次打开都会重新随机排序，画幅在 9:16 到 16:9 之间自适应。
+- 💬 **短拍也有故事**：点短拍旁的「故事」，侧边栏会展开这段视频的故事和评论区。
+- ✍️ **分工**：故事由 official 账号撰写；official 还负责修改视频信息、管理 For You 精选和下线视频。任何人都可以用邮箱和密码注册，参与评论和回复。
+- 🔎 **全站搜索**（`/search?q=`）：长拍、短拍一起搜。
 - 🎞️ **无损、精选的影像**：网站不开放上传。站长用离线命令行工具导入视频：不重新编码，只封装（首批视频的 HEVC Main 10、HLG 和 Dolby Vision 信息都完整保留），去除相机私有元数据，自动截取封面，并按 SHA-256 去重。
 - 🎨 **四色品牌与深色模式**：蓝 `#006ECF` 表示可操作，红 `#F22A1A` 表示播放，橙 `#FF8500` 表示提示，绿 `#73B338` 表示完成；主题默认跟随系统，并记住你的选择。
 
-<!-- 截图位，每个功能一张（可放进表格，也可逐张展示）：
-  docs/screenshots/short-feed-mobile.png（手机端短拍，竖屏 PNG，约 1170 × 2532，显示宽度 260）
-  docs/screenshots/watch-story.png（带故事面板的观看页，电脑端，16:9 PNG，约 1600 × 900）
-  docs/screenshots/dark-mode.png（深色模式下的首页或观看页，电脑端，16:9 PNG，约 1600 × 900）
+<!-- 截图位（电脑端浅色模式，宽约 1600 px，人脸和第三方水印已模糊）。文件就绪后加入下表：
+| 长拍按月成册 | 观看页与故事 |
+|:---:|:---:|
+| <img src="docs/screenshots/monthly.png" alt="按月分组的长拍" width="100%"> | <img src="docs/screenshots/watch-story.png" alt="带故事和推荐列表的观看页" width="100%"> |
+| **短拍** | **短拍的故事** |
+| <img src="docs/screenshots/short-feed.png" alt="竖向短拍信息流" width="100%"> | <img src="docs/screenshots/short-story.png" alt="展开故事与评论面板的短拍" width="100%"> |
 -->
 
 ## 🌐 在线体验
@@ -105,7 +111,7 @@ pnpm dev                    # http://localhost:3000
 
 ## 🗺️ 路线图 · 参与贡献
 
-- [x] 按月时间线、短拍、故事、账号与评论、首页精选
+- [x] For You 精选、长拍按月成册、短拍、故事、账号与评论
 - [x] 无损媒体导入流程，生产环境上线 bnds.life
 - [ ] TODO(Miles)：你愿意公开的后续计划
 
