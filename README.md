@@ -18,8 +18,7 @@
 
 </div>
 
-<!-- screenshot slot: docs/screenshots/home.png (home page with the For You carousel and the first month of long videos; desktop, light mode, about 1600 px wide, faces blurred). Add as <a href="https://bnds.life"><img src="docs/screenshots/home.png" alt="bnds.life home page with For You picks" width="100%"></a> -->
-<!-- GIF slot (optional): docs/media/demo.gif (browse, play, then the shorts feed; about 800 px wide, 10 to 20 s, under 10 MB) -->
+<a href="https://bnds.life"><img src="docs/screenshots/home.webp" alt="bnds.life home page: For You picks above long videos grouped by month" width="100%"></a>
 
 ## ✨ Features
 
@@ -27,25 +26,21 @@ Every video on bnds.life is either a **long video** (over 60 s) or a **short** (
 
 - ⭐ **For You picks** (`/`): the carousel at the top of the home page shows the videos the editors recommend most, hand-picked by the `official` account.
 - 🗓️ **Long videos, month by month** (`/`): below the picks, long videos are grouped under month headings such as 2023年8月, with a toggle between newest first and oldest first.
-- 📖 **Watch page with a story** (`/watch/[id]`): the player, the video's story (故事) underneath, and an up-next list on the right. On mobile the story opens in a drawer.
+- 📖 **Watch page with your story** (`/watch/[id]`): the player, an up-next list on the right, and a story (故事) section underneath where you write your own story about the video. On mobile the story opens in a drawer.
 - 📱 **Shorts feed** (`/recommend`, labeled 短拍 in the sidebar): a vertical feed you swipe or scroll through, one short after another. Arrow keys and on-screen buttons work too, only the current clip plays, and the order is reshuffled on each visit. Layouts adapt from 9:16 to 16:9.
-- 💬 **Stories on shorts too**: tap 故事 next to a short to open a side panel with its story and the comment thread.
-- ✍️ **Who writes what**: stories are written by the `official` editor account, which also edits video details, manages the For You picks and takes videos offline. Anyone can sign up with email and password to comment and reply.
+- 💬 **Stories on shorts too**: tap 故事 next to a short to open a side panel where you can write your story and read the comments.
+- ✍️ **Accounts, comments and curation**: sign up with email and password to write stories, comment and reply. The `official` account curates the For You picks, edits video details and takes videos offline.
 - 🔎 **Search** (`/search?q=`): searches every video, long or short.
 - 🎞️ **Lossless, curated media**: no public upload. The owner imports videos with an offline CLI that remuxes without re-encoding (HEVC Main 10, HLG and Dolby Vision metadata survived the first batch), strips private camera metadata, extracts posters and deduplicates by SHA-256.
 - 🎨 **Four-color brand and dark mode**: blue `#006ECF` for actions, red `#F22A1A` for playback, orange `#FF8500` for notices, green `#73B338` for success. The theme follows the system and remembers your choice.
 
-<!-- screenshot slots (desktop, light mode, about 1600 px wide, faces and third-party watermarks blurred). When the files exist, add this table:
-| Long videos by month | Watch page and story |
+| Watch page with your story | Your story on a short |
 |:---:|:---:|
-| <img src="docs/screenshots/monthly.png" alt="Long videos grouped by month" width="100%"> | <img src="docs/screenshots/watch-story.png" alt="Watch page with story and up-next list" width="100%"> |
-| **Shorts feed** | **Story on a short** |
-| <img src="docs/screenshots/short-feed.png" alt="Vertical shorts feed" width="100%"> | <img src="docs/screenshots/short-story.png" alt="Short with the story and comments panel" width="100%"> |
--->
+| <img src="docs/screenshots/watch-story.webp" alt="Watch page with the story section and up-next list" width="100%"> | <img src="docs/screenshots/short-story.webp" alt="Short video with the story and comments panel open" width="100%"> |
 
 ## 🌐 Live demo
 
-Open **[https://bnds.life](https://bnds.life)**. Browsing and watching need no account. To comment, register with any email and password; no email verification is required. There is no shared demo account.
+Open **[https://bnds.life](https://bnds.life)**. Browsing and watching need no account. To write stories or comment, register with any email and password; no email verification is required. There is no shared demo account.
 
 The site was first served from the temporary domain `xuesiyuan.com.cn` while the `bnds.life` ICP filing was in progress. That domain now redirects to `bnds.life`.
 
