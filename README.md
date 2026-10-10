@@ -1,60 +1,119 @@
-# BNDS.life · 十一小日子
+<div align="center">
 
-公开浏览校园影像的中文网站。基于现有 Create T3 App 项目，保留 Next.js App Router、TypeScript、Tailwind CSS、tRPC、Better Auth、Drizzle 和 PostgreSQL。
+<a href="https://bnds.life"><img src="public/brand/logo-transparent.png" alt="bnds.life logo" width="360"></a>
 
-## 本地运行
+# bnds.life
 
-先启动 OrbStack 或其他 Docker 运行环境。在项目目录中执行：
+### A campus-life video site: a monthly timeline of longer videos, a swipeable short-clip feed, and a story behind every video
+
+<b>English</b> · <a href="./README.zh-CN.md">简体中文</a>
+
+**[Live site](https://bnds.life)** · [Media import guide](docs/media-import.md) · [Brand guide](docs/brand.md) · Feedback: TODO(Miles)
+
+![Next.js 15](https://img.shields.io/badge/Next.js-15-000000?logo=nextdotjs)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Drizzle-4169E1?logo=postgresql&logoColor=white)
+[![Website status](https://img.shields.io/website?url=https%3A%2F%2Fbnds.life&label=bnds.life)](https://bnds.life)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+</div>
+
+<!-- screenshot slot: docs/screenshots/home.png (home timeline, desktop, light mode, 16:9 PNG, about 1600 x 900; no identifiable people unless you have consent). Add as <a href="https://bnds.life"><img src="docs/screenshots/home.png" alt="bnds.life home timeline" width="100%"></a> -->
+<!-- GIF slot (optional): docs/media/demo.gif (browse, play, then the 短拍 feed; about 800 px wide, 10 to 20 s, under 10 MB) -->
+
+## ✨ Features
+
+- 🗓️ **Monthly timeline** (`/`): videos longer than 60 s, grouped by shooting month with the newest first, plus official featured picks at the top.
+- 📱 **短拍 short-clip feed** (`/recommend`): clips of 60 s or less in a vertical feed. Switch clips by scrolling, arrow keys or buttons; only the current clip plays. Layouts adapt from 9:16 to 16:9.
+- 📖 **A story for every video** (`/watch/[id]`): the player plus an official story. On desktop the story opens beside the video; on mobile it opens in a drawer.
+- 💬 **Accounts and comments**: email + password sign-up. Users comment and reply; the `official` role writes stories, edits video info, manages featured picks and takes videos offline.
+- 🔎 **Search** (`/search?q=`): searches every video, regardless of category.
+- 🎞️ **Lossless, curated media**: no public upload. The owner imports videos with an offline CLI that remuxes without re-encoding (HEVC Main 10, HLG and Dolby Vision metadata survived the first batch), strips private camera metadata, extracts posters and deduplicates by SHA-256.
+- 🎨 **Four-color brand and dark mode**: blue `#006ECF` for actions, red `#F22A1A` for playback, orange `#FF8500` for notices, green `#73B338` for success. The theme follows the system and remembers your choice.
+
+<!-- screenshot slots, one per feature (show them in a table or one by one):
+  docs/screenshots/short-feed-mobile.png (短拍 feed on a phone, portrait PNG, about 1170 x 2532, shown at width 260)
+  docs/screenshots/watch-story.png (watch page with the story panel, desktop, 16:9 PNG, about 1600 x 900)
+  docs/screenshots/dark-mode.png (home or watch page in dark mode, desktop, 16:9 PNG, about 1600 x 900)
+-->
+
+## 🌐 Live demo
+
+Open **[https://bnds.life](https://bnds.life)**. Browsing and watching need no account. To comment, register with any email and password; no email verification is required. There is no shared demo account.
+
+The site was first served from the temporary domain `xuesiyuan.com.cn` while the `bnds.life` ICP filing was in progress. That domain now redirects to `bnds.life`.
+
+## 🏗️ Architecture
+
+```mermaid
+flowchart LR
+  B["Browser"] -->|"HTTPS"| N["Nginx"]
+  N -->|"pages + tRPC"| A["Next.js App Router<br/>tRPC · Better Auth"]
+  A --> DB[("PostgreSQL<br/>Drizzle ORM")]
+  N -->|"auth_request:<br/>is this file published?"| A
+  N --> M[("Media storage<br/>MP4 + posters")]
+  O["Site owner"] -->|"SSH / SCP"| I["incoming/"]
+  I --> CLI["scripts/media.mjs<br/>ffprobe · remux · poster · SHA-256"]
+  CLI --> M
+  CLI --> DB
+```
+
+- Pages live in `src/app/` (`/`, `/watch/[id]`, `/recommend`, `/search`, `/login`, `/register`). The public catalog API is `src/server/api/routers/video.ts`, and `src/server/videos.ts` is the read-only catalog shared by all pages.
+- `src/server/db/schema.ts` holds the Drizzle schema: auth tables plus `videos` and `video_assets`.
+- Before Nginx serves a media file, it asks the app to confirm the file belongs to a currently published video. Taken-down media is kept for 7 days and then removed by a scheduled job.
+
+## 🧰 Tech stack
+
+| Layer | Technology |
+|---|---|
+| Frontend | Next.js 15 (App Router) · React 19 · Tailwind CSS 4 · TanStack Query |
+| API and auth | tRPC 11 · Better Auth (email + password) · Zod |
+| Data | PostgreSQL · Drizzle ORM |
+| Media | FFmpeg / FFprobe · Node.js CLI (`scripts/media.mjs`) |
+| Ops | Nginx · systemd · Let's Encrypt (auto-renew) |
+| Scaffold | [Create T3 App](https://create.t3.gg/) 7.40 · pnpm |
+
+## 🚀 Getting started
+
+Prerequisites: Node.js, pnpm, and Docker (e.g. OrbStack) for the local PostgreSQL. Last verified with Node.js 26.9.0, pnpm 12.4.2 and PostgreSQL 18.6.
 
 ```sh
 pnpm install
-cp .env.example .env # 仅首次克隆时执行，不要覆盖现有 .env
-# 生成 BETTER_AUTH_SECRET：openssl rand -base64 32，然后将结果填入 .env
-./start-database.sh
-pnpm db:push
-pnpm dev
+cp .env.example .env        # first clone only; don't overwrite an existing .env
+./start-database.sh         # starts local PostgreSQL
+pnpm db:push                # sync the schema
+pnpm dev                    # http://localhost:3000
 ```
 
-访问 http://localhost:3000 。本次验收使用 Node.js 26.9.0、pnpm 12.4.2、PostgreSQL 18.6。
+| Variable | Required | Description |
+|---|---|---|
+| `DATABASE_URL` | yes | PostgreSQL connection string |
+| `BETTER_AUTH_SECRET` | in production | Auth secret; generate with `openssl rand -base64 32` |
+| `BETTER_AUTH_URL` | no | Site origin (default `http://localhost:3000`) |
+| `VIDEO_CATALOG_MODE` | no | `demo` (default, placeholder media) or `database` (real catalog) |
+| `MEDIA_ROOT` | for media tools | Private media root, never inside `public/` |
 
-`start-database.sh` 负责启动本地 PostgreSQL；初次使用默认密码时会提示生成随机密码并更新 `.env`。重复运行会复用现有容器。`db:push` 同步表结构，不负责启动数据库。
+Development uses a demo catalog with placeholder media that contains no real people or campus footage. Checks: `pnpm test` (unit), `pnpm test:media` (needs FFmpeg and local PostgreSQL), `pnpm check` (`next lint` + `tsc --noEmit`) and `pnpm build`.
 
-`.env` 不提交 Git。生产环境应设置独立的数据库连接、足够长的 `BETTER_AUTH_SECRET` 与实际站点的 `BETTER_AUTH_URL`。本地数据库与生产数据库互相独立。数据库包含四张账户基础表，以及 `videos`、`video_assets` 媒体目录表。
+## 📦 Deployment
 
-## 当前页面
+Production runs on a single Linux server: Nginx terminates HTTPS (Let's Encrypt, auto-renewed) and proxies to the Next.js app, which is managed by systemd as an unprivileged user and backed by a local PostgreSQL. Each release is built in its own `releases/<commit>` directory and switched in atomically, and the previous release is kept for rollback. Videos are uploaded over SSH and imported with `pnpm media`; see [`docs/media-import.md`](docs/media-import.md).
 
-- `/`：超过 60 秒的视频，按拍摄月份倒序展示，顶部为 official 选择的精选；无需登录。
-- `/watch/[id]`：播放器、同一行的标题与日期、独立的故事与评论区域。
-- `/recommend`：「短拍」，只播放不超过 60 秒的视频；上下滚动、键盘方向键和桌面按钮切换；仅当前项播放。
-- `/search?q=关键词`：搜索全部视频，不受首页／短拍分类限制。旧的首页搜索链接会跳转至此。
+## 🗺️ Roadmap · Contributing
 
-侧栏只有「首页」与「短拍」。按未取整的原片时长分类，原片缺少时长时回退播放资源。短拍画幅适配范围为 9:16～16:9；电脑故事侧排并与视频等高，手机故事使用覆盖抽屉。公共导航与短拍共用宽高比 1:1 分界。开发默认演示目录，示例素材不含真实人物或校园内容；生产已启用真实视频数据库目录；空目录显示空状态，不回填演示素材。
+- [x] Monthly timeline, 短拍 feed, stories, accounts and comments, featured picks
+- [x] Lossless media pipeline and production deployment at bnds.life
+- [ ] TODO(Miles): next steps you are happy to share publicly
 
-支持邮箱密码注册／登录，无需验证邮箱。普通用户可评论和回复；official 只编写故事，可修改视频信息、管理首页精选和下线视频。每个视频只有一段故事；下线后资源保留 7 天再由定时脚本清理。没有公开上传功能或上传者头像。真实视频由站长通过 SSH/SCP/rsync 传入服务器，再由离线工具提取封面、按需处理播放文件并入库，见 [媒体导入说明](docs/media-import.md)。
+This is a personal project and is not open to outside contributions right now. <!-- TODO(Miles): adjust if the repo goes public. -->
 
-## 检查
+## 📄 License
 
-```sh
-pnpm test
-pnpm test:media # 需要 FFmpeg/FFprobe 和本地 PostgreSQL；创建临时测试 schema
-pnpm check
-pnpm build
-pnpm start
-```
+The source code is released under the [MIT License](LICENSE).
 
-单元测试覆盖精确时长分类、公开精选范围、搜索、推荐顺序、布局与屏幕尺寸切换、浏览器快捷键。精选权限和并发下线集成测试为 `tests/featured-videos.integration.mjs`，使用随机隔离 schema。最新界面交互和多尺寸检查见 [首页与短拍验收](docs/verification-home-short-feed.md)。
+Campus videos, stories and other media shown on bnds.life are not covered by the code license; all rights remain with their owners.
 
-## 文件入口
+## 🙏 Acknowledgements
 
-- `src/lib/videos.ts`：公共 Video 类型与开发用演示目录。
-- `src/server/videos.ts`：正式只读视频目录，三个页面共用。
-- `scripts/media.mjs`：仅通过命令行调用的媒体导入与维护工具。
-- `src/components/`：外壳、侧栏、播放器、观看页、推荐页和故事组件。
-- `src/server/api/routers/video.ts`：公开的 tRPC 目录接口。
-- `src/server/db/schema.ts`：Drizzle 账户表与媒体目录表。
-
-界面以用户提供截图和本次实际访问的 YouTube 页面为参考；YouTube 的地区/账户实验版本可能不同。本次没有复制 YouTube 品牌、广告、订阅、会员或混剪功能。
-
-## 服务器部署
-
-当前访问地址为 [https://xuesiyuan.com.cn](https://xuesiyuan.com.cn)，使用 Nginx、systemd 与独立生产数据库，HTTPS 证书自动续期。此域名按用户要求临时使用，待 `bnds.life` 备案完成后迁移。运行版本、服务路径和更新／恢复方式见 [部署记录](docs/deployment.md)。
+Designed, built and operated by Miles Xue. Bootstrapped with [Create T3 App](https://create.t3.gg/). The "Play List" navigation icon comes from Streamline (see `public/icons/`). The layout takes cues from mainstream video sites without copying their branding. The logo is AI-assisted: it started from an AI-generated source image, and the transparent and dark-background versions were made with AI image edits (see [`docs/brand-logo-edit.md`](docs/brand-logo-edit.md)).
+<!-- TODO(Miles): confirm the Streamline icon license wording. -->

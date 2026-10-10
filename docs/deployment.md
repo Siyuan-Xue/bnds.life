@@ -1,6 +1,8 @@
 # SSH 部署记录
 
-2026-09-20：当前网站通过 [https://xuesiyuan.com.cn](https://xuesiyuan.com.cn) 访问，应用版本为 `e7b4b69`。`bnds.life` 正在备案，按用户要求暂时使用已备案的 `xuesiyuan.com.cn`。原 IP 地址 `http://<SERVER_IP>` 保留。源码保存在现有私有仓库 `Siyuan-Xue/bnds.life` 的 `main`。
+> 说明：本文是开发与运维过程记录。文中的提交号（如 `e7b4b69`）来自整理前的原始历史，与本仓库现在的提交号不对应；服务器地址、SSH 用户、管理员邮箱和备份编号已替换为 `<SERVER_IP>`、`<SSH_USER>` 等占位符。
+
+2026-09-20：当前网站通过 [https://xuesiyuan.com.cn](https://xuesiyuan.com.cn) 访问，应用版本为 `e7b4b69`。`bnds.life` 正在备案，按用户要求暂时使用已备案的 `xuesiyuan.com.cn`。原 IP 地址 `http://<SERVER_IP>` 保留。源码保存在 `Siyuan-Xue/bnds.life` 的 `main`。
 
 ## 服务器与运行方式
 
