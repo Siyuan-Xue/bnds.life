@@ -4,7 +4,7 @@
 
 # bnds.life
 
-### A campus-life video site: a monthly timeline of longer videos, a swipeable short-clip feed, and a story behind every video
+### A campus-life video site: hand-picked highlights, long videos month by month, a swipeable shorts feed, and a story behind every video
 
 <b>English</b> · <a href="./README.zh-CN.md">简体中文</a>
 
@@ -18,23 +18,29 @@
 
 </div>
 
-<!-- screenshot slot: docs/screenshots/home.png (home timeline, desktop, light mode, 16:9 PNG, about 1600 x 900; no identifiable people unless you have consent). Add as <a href="https://bnds.life"><img src="docs/screenshots/home.png" alt="bnds.life home timeline" width="100%"></a> -->
-<!-- GIF slot (optional): docs/media/demo.gif (browse, play, then the 短拍 feed; about 800 px wide, 10 to 20 s, under 10 MB) -->
+<!-- screenshot slot: docs/screenshots/home.png (home page with the For You carousel and the first month of long videos; desktop, light mode, about 1600 px wide, faces blurred). Add as <a href="https://bnds.life"><img src="docs/screenshots/home.png" alt="bnds.life home page with For You picks" width="100%"></a> -->
+<!-- GIF slot (optional): docs/media/demo.gif (browse, play, then the shorts feed; about 800 px wide, 10 to 20 s, under 10 MB) -->
 
 ## ✨ Features
 
-- 🗓️ **Monthly timeline** (`/`): videos longer than 60 s, grouped by shooting month with the newest first, plus official featured picks at the top.
-- 📱 **短拍 short-clip feed** (`/recommend`): clips of 60 s or less in a vertical feed. Switch clips by scrolling, arrow keys or buttons; only the current clip plays. Layouts adapt from 9:16 to 16:9.
-- 📖 **A story for every video** (`/watch/[id]`): the player plus an official story. On desktop the story opens beside the video; on mobile it opens in a drawer.
-- 💬 **Accounts and comments**: email + password sign-up. Users comment and reply; the `official` role writes stories, edits video info, manages featured picks and takes videos offline.
-- 🔎 **Search** (`/search?q=`): searches every video, regardless of category.
+Every video on bnds.life is either a **long video** (over 60 s) or a **short** (60 s or less). In the site's Chinese interface they are called 长拍 and 短拍.
+
+- ⭐ **For You picks** (`/`): the carousel at the top of the home page shows the videos the editors recommend most, hand-picked by the `official` account.
+- 🗓️ **Long videos, month by month** (`/`): below the picks, long videos are grouped under month headings such as 2023年8月, with a toggle between newest first and oldest first.
+- 📖 **Watch page with a story** (`/watch/[id]`): the player, the video's story (故事) underneath, and an up-next list on the right. On mobile the story opens in a drawer.
+- 📱 **Shorts feed** (`/recommend`, labeled 短拍 in the sidebar): a vertical feed you swipe or scroll through, one short after another. Arrow keys and on-screen buttons work too, only the current clip plays, and the order is reshuffled on each visit. Layouts adapt from 9:16 to 16:9.
+- 💬 **Stories on shorts too**: tap 故事 next to a short to open a side panel with its story and the comment thread.
+- ✍️ **Who writes what**: stories are written by the `official` editor account, which also edits video details, manages the For You picks and takes videos offline. Anyone can sign up with email and password to comment and reply.
+- 🔎 **Search** (`/search?q=`): searches every video, long or short.
 - 🎞️ **Lossless, curated media**: no public upload. The owner imports videos with an offline CLI that remuxes without re-encoding (HEVC Main 10, HLG and Dolby Vision metadata survived the first batch), strips private camera metadata, extracts posters and deduplicates by SHA-256.
 - 🎨 **Four-color brand and dark mode**: blue `#006ECF` for actions, red `#F22A1A` for playback, orange `#FF8500` for notices, green `#73B338` for success. The theme follows the system and remembers your choice.
 
-<!-- screenshot slots, one per feature (show them in a table or one by one):
-  docs/screenshots/short-feed-mobile.png (短拍 feed on a phone, portrait PNG, about 1170 x 2532, shown at width 260)
-  docs/screenshots/watch-story.png (watch page with the story panel, desktop, 16:9 PNG, about 1600 x 900)
-  docs/screenshots/dark-mode.png (home or watch page in dark mode, desktop, 16:9 PNG, about 1600 x 900)
+<!-- screenshot slots (desktop, light mode, about 1600 px wide, faces and third-party watermarks blurred). When the files exist, add this table:
+| Long videos by month | Watch page and story |
+|:---:|:---:|
+| <img src="docs/screenshots/monthly.png" alt="Long videos grouped by month" width="100%"> | <img src="docs/screenshots/watch-story.png" alt="Watch page with story and up-next list" width="100%"> |
+| **Shorts feed** | **Story on a short** |
+| <img src="docs/screenshots/short-feed.png" alt="Vertical shorts feed" width="100%"> | <img src="docs/screenshots/short-story.png" alt="Short with the story and comments panel" width="100%"> |
 -->
 
 ## 🌐 Live demo
@@ -101,7 +107,7 @@ Production runs on a single Linux server: Nginx terminates HTTPS (Let's Encrypt,
 
 ## 🗺️ Roadmap · Contributing
 
-- [x] Monthly timeline, 短拍 feed, stories, accounts and comments, featured picks
+- [x] For You picks, long videos by month, shorts feed, stories, accounts and comments
 - [x] Lossless media pipeline and production deployment at bnds.life
 - [ ] TODO(Miles): next steps you are happy to share publicly
 
